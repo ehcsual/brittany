@@ -1,0 +1,11 @@
+services:
+  brittany:
+    build: .
+    ports:
+      - "7333:7333"
+    volumes:
+      - brittany-data:/data
+    restart: unless-stopped
+
+volumes:
+  brittany-data:

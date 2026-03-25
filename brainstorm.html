@@ -1,0 +1,1484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brittany</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Inter',-apple-system,sans-serif;-webkit-font-smoothing:antialiased;background:#0d1117;color:#e2e8f0}
+
+/* ── LAYOUT ── */
+#app{display:flex;width:100%;height:100%;flex-direction:column}
+#header{flex-shrink:0;height:46px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:8px;padding:0 12px;background:#0d1117;z-index:20}
+#body{display:flex;flex:1;overflow:hidden}
+#sidebar{width:220px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.06);display:flex;flex-direction:column;background:#0d1117;overflow:hidden}
+#canvas-wrap{flex:1;position:relative;overflow:hidden}
+
+/* ── SIDEBAR ── */
+.sb-header{padding:10px 12px 8px;border-bottom:1px solid rgba(255,255,255,0.05)}
+.sb-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:#334155}
+.board-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;cursor:pointer;margin:1px 4px;transition:background .13s}
+.board-item:hover{background:rgba(255,255,255,0.05)}
+.board-item.active{background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.2)}
+.board-icon{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px}
+.board-name{font-size:12px;font-weight:500;color:#94a3b8;flex:1;truncate:clip;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.board-item.active .board-name{color:#fbbf24}
+.board-type-badge{font-size:9px;color:#475569;font-weight:500}
+.sb-btn{display:flex;align-items:center;gap:6px;padding:6px 10px;font-size:11.5px;color:#475569;cursor:pointer;border-radius:6px;margin:2px 4px;transition:all .13s;background:none;border:none;width:calc(100% - 8px);text-align:left}
+.sb-btn:hover{background:rgba(255,255,255,0.05);color:#94a3b8}
+
+/* ── TOOLBAR ── */
+.tb{display:flex;align-items:center;gap:6px;padding:0 4px;flex:1;overflow-x:auto}
+.tb-btn{display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:7px;font-size:11.5px;font-weight:500;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:#94a3b8;cursor:pointer;transition:all .13s;white-space:nowrap;flex-shrink:0}
+.tb-btn:hover{background:rgba(255,255,255,0.09);color:#cbd5e1}
+.tb-btn.on{background:rgba(245,158,11,0.16);border-color:rgba(245,158,11,0.4);color:#fbbf24}
+.tb-btn svg{width:12px;height:12px}
+.tb-sep{width:1px;height:18px;background:rgba(255,255,255,0.07);flex-shrink:0}
+
+/* ── CANVAS ── */
+#canvas-bg{position:absolute;inset:0;background-color:#0d1117;background-image:radial-gradient(circle,rgba(255,255,255,0.07) 1px,transparent 1px);background-size:26px 26px}
+#canvas-layer{position:absolute;inset:0}
+#edges-svg,#wire-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+#wire-svg{pointer-events:none}
+#nodes-layer{position:absolute;inset:0}
+#canvas-wrap.connecting,#canvas-wrap.connecting .node{cursor:crosshair}
+
+/* ── NODES ── */
+.node{position:absolute;cursor:grab;user-select:none;transition:box-shadow .14s,border-color .14s}
+.node.dragging{cursor:grabbing;z-index:999}
+.node.connect-source{outline:2px solid #f59e0b;outline-offset:2px}
+.node.connect-hover{outline:2px solid #10b981;outline-offset:2px}
+
+/* freeform idea */
+.node-idea{width:180px;background:#161b22;border:1.5px solid rgba(255,255,255,0.09);border-radius:11px;overflow:hidden;box-shadow:0 3px 14px rgba(0,0,0,0.45)}
+.node-idea:hover{border-color:rgba(255,255,255,0.18);box-shadow:0 5px 22px rgba(0,0,0,0.6)}
+.node-idea .n-bar{height:5px}
+.node-idea .n-body{padding:9px 11px 10px}
+
+/* flowchart process */
+.node-process{width:170px;background:#131820;border:1.5px solid rgba(59,130,246,0.25);border-radius:7px;padding:10px 12px;box-shadow:0 3px 14px rgba(0,0,0,0.4)}
+.node-process:hover{border-color:rgba(59,130,246,0.5)}
+
+/* flowchart decision — diamond */
+.node-decision{width:140px;height:80px;background:transparent;border:none;display:flex;align-items:center;justify-content:center}
+.decision-diamond{width:128px;height:72px;background:#1c1a10;border:2px solid rgba(245,158,11,0.55);transform:rotate(45deg);border-radius:4px;box-shadow:0 3px 14px rgba(0,0,0,0.4)}
+.decision-label{position:absolute;width:120px;text-align:center;font-size:11px;font-weight:600;color:#fbbf24;pointer-events:none;z-index:1}
+.node-decision:hover .decision-diamond{border-color:rgba(245,158,11,0.9)}
+
+/* flowchart start/end */
+.node-start,.node-end{width:140px;padding:9px 14px;border-radius:50px;text-align:center;font-size:12px;font-weight:600;box-shadow:0 3px 14px rgba(0,0,0,0.4)}
+.node-start{background:#0f2018;border:1.5px solid rgba(16,185,129,0.4);color:#34d399}
+.node-start:hover{border-color:rgba(16,185,129,0.75)}
+.node-end{background:#1e0f0f;border:1.5px solid rgba(239,68,68,0.35);color:#f87171}
+.node-end:hover{border-color:rgba(239,68,68,0.7)}
+
+/* problem solving */
+.node-problem{width:200px;background:#1a0a0a;border:2px solid rgba(239,68,68,0.45);border-radius:10px;padding:12px 14px;box-shadow:0 4px 20px rgba(239,68,68,0.15)}
+.node-problem:hover{border-color:rgba(239,68,68,0.75)}
+.node-solution{width:180px;background:#0d1a2a;border:1.5px solid rgba(99,102,241,0.4);border-radius:10px;padding:10px 12px;box-shadow:0 3px 14px rgba(0,0,0,0.4)}
+.node-solution:hover{border-color:rgba(99,102,241,0.75)}
+.node-risk{width:165px;background:#1a1200;border:1.5px solid rgba(245,158,11,0.4);border-radius:8px;padding:9px 11px;box-shadow:0 3px 12px rgba(0,0,0,0.4)}
+.node-risk:hover{border-color:rgba(245,158,11,0.75)}
+.node-benefit{width:165px;background:#0a1a12;border:1.5px solid rgba(16,185,129,0.35);border-radius:8px;padding:9px 11px;box-shadow:0 3px 12px rgba(0,0,0,0.4)}
+.node-benefit:hover{border-color:rgba(16,185,129,0.7)}
+.node-obstacle{width:165px;background:#131318;border:1.5px solid rgba(148,163,184,0.25);border-radius:8px;padding:9px 11px;box-shadow:0 3px 12px rgba(0,0,0,0.4)}
+.node-obstacle:hover{border-color:rgba(148,163,184,0.5)}
+
+/* ── FICTION ── */
+.node-chapter{width:190px;background:#1a1400;border:2px solid rgba(245,158,11,0.5);border-radius:10px;padding:11px 13px;box-shadow:0 4px 20px rgba(245,158,11,0.1)}
+.node-chapter:hover{border-color:rgba(245,158,11,0.85)}
+.node-character{width:170px;background:#180e2a;border:1.5px solid rgba(139,92,246,0.45);border-radius:10px;padding:10px 12px;box-shadow:0 3px 14px rgba(0,0,0,0.4)}
+.node-character:hover{border-color:rgba(139,92,246,0.8)}
+.node-scene{width:180px;background:#0d1520;border:1.5px solid rgba(59,130,246,0.4);border-radius:8px;padding:10px 12px;box-shadow:0 3px 14px rgba(0,0,0,0.4)}
+.node-scene:hover{border-color:rgba(59,130,246,0.75)}
+.node-plot_point{width:175px;background:#1a0e06;border:1.5px solid rgba(249,115,22,0.45);border-radius:8px;padding:10px 12px;box-shadow:0 3px 14px rgba(0,0,0,0.4)}
+.node-plot_point:hover{border-color:rgba(249,115,22,0.8)}
+.node-setting{width:170px;background:#061a14;border:1.5px solid rgba(20,184,166,0.4);border-radius:8px;padding:10px 12px;box-shadow:0 3px 12px rgba(0,0,0,0.4)}
+.node-setting:hover{border-color:rgba(20,184,166,0.75)}
+.node-theme{width:165px;background:#1a0616;border:1.5px solid rgba(236,72,153,0.4);border-radius:8px;padding:9px 11px;box-shadow:0 3px 12px rgba(0,0,0,0.4)}
+.node-theme:hover{border-color:rgba(236,72,153,0.75)}
+.node-conflict{width:165px;background:#180808;border:1.5px solid rgba(239,68,68,0.4);border-radius:8px;padding:9px 11px;box-shadow:0 3px 12px rgba(0,0,0,0.4)}
+.node-conflict:hover{border-color:rgba(239,68,68,0.75)}
+.node-arc{width:175px;background:#0a0f20;border:1.5px solid rgba(99,102,241,0.4);border-radius:8px;padding:10px 12px;box-shadow:0 3px 12px rgba(0,0,0,0.4)}
+.node-arc:hover{border-color:rgba(99,102,241,0.75)}
+
+/* ── 15 BEATS ── */
+.node-beat{width:230px;background:#0f1520;border:1.5px solid rgba(255,255,255,0.08);border-radius:10px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.5)}
+.node-beat:hover{border-color:rgba(255,255,255,0.2)}
+.node-beat .beat-act-bar{height:3px}
+.node-beat .beat-header{display:flex;align-items:center;gap:8px;padding:9px 11px 7px}
+.node-beat .beat-num{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0}
+.node-beat .beat-title-col{flex:1;min-width:0}
+.node-beat .beat-name{font-size:11.5px;font-weight:600;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.node-beat .beat-pct{font-size:9.5px;color:#475569;margin-top:1px}
+.node-beat .beat-body{padding:7px 11px 9px;border-top:1px solid rgba(255,255,255,0.05)}
+.node-beat .beat-hint{font-size:10px;color:#2e3a4e;line-height:1.45;margin-bottom:5px}
+.node-beat .beat-notes{font-size:11px;color:#94a3b8;line-height:1.4;font-style:italic}
+
+/* ── NONFICTION ── */
+.node-section{width:175px;background:#0e1020;border:1.5px solid rgba(99,102,241,0.35);border-radius:8px;padding:10px 12px;box-shadow:0 3px 14px rgba(0,0,0,0.4)}
+.node-section:hover{border-color:rgba(99,102,241,0.7)}
+.node-argument{width:175px;background:#0c0e1c;border:1.5px solid rgba(129,140,248,0.4);border-radius:8px;padding:10px 12px;box-shadow:0 3px 14px rgba(0,0,0,0.4)}
+.node-argument:hover{border-color:rgba(129,140,248,0.75)}
+.node-evidence{width:165px;background:#061a10;border:1.5px solid rgba(16,185,129,0.4);border-radius:8px;padding:9px 11px;box-shadow:0 3px 12px rgba(0,0,0,0.4)}
+.node-evidence:hover{border-color:rgba(16,185,129,0.75)}
+.node-key_point{width:165px;background:#180e00;border:1.5px solid rgba(249,115,22,0.4);border-radius:8px;padding:9px 11px;box-shadow:0 3px 12px rgba(0,0,0,0.4)}
+.node-key_point:hover{border-color:rgba(249,115,22,0.75)}
+.node-source{width:155px;background:#0e1118;border:1.5px solid rgba(100,116,139,0.3);border-radius:7px;padding:8px 10px;box-shadow:0 2px 10px rgba(0,0,0,0.4)}
+.node-source:hover{border-color:rgba(100,116,139,0.6)}
+.node-conclusion{width:175px;background:#180c0c;border:2px solid rgba(239,68,68,0.4);border-radius:10px;padding:11px 13px;box-shadow:0 4px 18px rgba(0,0,0,0.4)}
+.node-conclusion:hover{border-color:rgba(239,68,68,0.75)}
+
+/* ── RESEARCH ── */
+.node-hypothesis{width:185px;background:#0e0c20;border:2px solid rgba(139,92,246,0.5);border-radius:10px;padding:11px 13px;box-shadow:0 4px 20px rgba(139,92,246,0.12)}
+.node-hypothesis:hover{border-color:rgba(139,92,246,0.85)}
+.node-methodology{width:175px;background:#0a1422;border:1.5px solid rgba(59,130,246,0.4);border-radius:8px;padding:10px 12px;box-shadow:0 3px 14px rgba(0,0,0,0.4)}
+.node-methodology:hover{border-color:rgba(59,130,246,0.75)}
+.node-lit_review{width:170px;background:#130a1c;border:1.5px solid rgba(168,85,247,0.4);border-radius:8px;padding:10px 12px;box-shadow:0 3px 12px rgba(0,0,0,0.4)}
+.node-lit_review:hover{border-color:rgba(168,85,247,0.75)}
+.node-finding{width:170px;background:#061816;border:1.5px solid rgba(20,184,166,0.4);border-radius:8px;padding:10px 12px;box-shadow:0 3px 12px rgba(0,0,0,0.4)}
+.node-finding:hover{border-color:rgba(20,184,166,0.75)}
+.node-citation{width:155px;background:#0e1010;border:1.5px solid rgba(100,116,139,0.3);border-radius:7px;padding:8px 10px;box-shadow:0 2px 10px rgba(0,0,0,0.4)}
+.node-citation:hover{border-color:rgba(100,116,139,0.6)}
+.node-analysis{width:170px;background:#160e06;border:1.5px solid rgba(249,115,22,0.4);border-radius:8px;padding:10px 12px;box-shadow:0 3px 12px rgba(0,0,0,0.4)}
+.node-analysis:hover{border-color:rgba(249,115,22,0.75)}
+
+/* shared node text */
+.n-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;opacity:.7}
+.n-title{font-size:12px;font-weight:600;color:#e2e8f0;line-height:1.35;word-break:break-word}
+.n-desc{font-size:11px;color:#64748b;margin-top:3px;line-height:1.4;word-break:break-word}
+.n-actions{display:flex;gap:2px;padding:4px 6px;border-top:1px solid rgba(255,255,255,0.05);opacity:0;transition:opacity .13s}
+.node:hover .n-actions{opacity:1}
+.n-btn{padding:3px 6px;border-radius:5px;border:none;background:none;color:#475569;cursor:pointer;font-size:10px;display:flex;align-items:center;gap:3px;transition:background .12s,color .12s;font-family:inherit}
+.n-btn:hover{background:rgba(255,255,255,0.07);color:#94a3b8}
+.n-btn.del:hover{background:rgba(239,68,68,0.12);color:#f87171}
+
+/* ── EMPTY STATE ── */
+#empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;gap:10px}
+
+/* ── MODALS ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:500;display:none;align-items:center;justify-content:center}
+.overlay.show{display:flex}
+.mbox{background:#161b22;border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:22px;width:min(480px,95vw);box-shadow:0 24px 64px rgba(0,0,0,0.65);max-height:90vh;overflow-y:auto}
+.meta-row{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap}
+.meta-tag{font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(255,255,255,0.06);color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
+.meta-tag strong{color:#94a3b8;font-weight:600}
+.inp{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);border-radius:8px;padding:8px 11px;font-size:13px;color:#e2e8f0;outline:none;transition:border-color .14s;font-family:inherit}
+.inp:focus{border-color:rgba(129,140,248,0.55)}
+textarea.inp{resize:vertical;min-height:68px}
+select.inp option{background:#1e2530}
+.cdot{width:20px;height:20px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .12s,box-shadow .12s;flex-shrink:0}
+.cdot:hover{transform:scale(1.18)}
+.cdot.sel{border-color:#fff;box-shadow:0 0 0 2px #818cf8;transform:scale(1.08)}
+.lbl{font-size:11px;color:#64748b;display:block;margin-bottom:5px}
+.ctx-menu{position:fixed;background:#1a2030;border:1px solid rgba(255,255,255,0.1);border-radius:9px;padding:4px;z-index:600;min-width:175px;box-shadow:0 10px 36px rgba(0,0,0,0.65);display:none}
+.ctx-item{display:flex;align-items:center;gap:8px;width:100%;padding:7px 10px;border-radius:6px;font-size:12px;color:#94a3b8;background:none;border:none;cursor:pointer;text-align:left;font-family:inherit;transition:background .1s,color .1s}
+.ctx-item:hover{background:rgba(255,255,255,0.06);color:#e2e8f0}
+.ctx-item.danger:hover{background:rgba(239,68,68,0.12);color:#f87171}
+.ctx-item svg{width:13px;height:13px;flex-shrink:0}
+.ctx-sep{height:1px;background:rgba(255,255,255,0.07);margin:3px 0}
+/* board type cards */
+.type-card{border:1.5px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px;cursor:pointer;transition:all .15s;text-align:left}
+.type-card:hover{border-color:rgba(255,255,255,0.18);background:rgba(255,255,255,0.04)}
+.type-card.sel{border-color:rgba(245,158,11,0.5);background:rgba(245,158,11,0.08)}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- HEADER -->
+<div id="header">
+  <div style="display:flex;align-items:center;gap:7px;flex-shrink:0;padding-right:8px;border-right:1px solid rgba(255,255,255,0.07)">
+    <div style="width:24px;height:24px;border-radius:6px;background:rgba(245,158,11,0.18);border:1px solid rgba(245,158,11,0.3);display:flex;align-items:center;justify-content:center">
+      <svg style="width:12px;height:12px;stroke:#fbbf24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+    </div>
+    <span style="font-size:13px;font-weight:600;color:#fbbf24">Brittany</span>
+  </div>
+  <div class="tb" id="toolbar">
+    <span style="font-size:11.5px;color:#2d3748" id="board-hint">Select a board to start</span>
+  </div>
+</div>
+
+<!-- BODY -->
+<div id="body">
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sb-header">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span class="sb-title">Boards</span>
+        <button class="tb-btn" onclick="openNewBoard()" style="padding:3px 8px;font-size:11px;margin:0">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>
+          New
+        </button>
+      </div>
+    </div>
+    <div id="board-list" style="flex:1;overflow-y:auto;padding:4px 0"></div>
+  </div>
+
+  <!-- CANVAS -->
+  <div id="canvas-wrap">
+    <div id="canvas-bg"></div>
+    <div id="canvas-layer">
+      <svg id="edges-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+      <svg id="wire-svg"  xmlns="http://www.w3.org/2000/svg"></svg>
+      <div id="nodes-layer"></div>
+    </div>
+    <div id="empty" style="display:none">
+      <div style="width:52px;height:52px;border-radius:14px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.2);display:flex;align-items:center;justify-content:center">
+        <svg style="width:22px;height:22px;stroke:#fbbf24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+      </div>
+      <p style="font-size:13px;font-weight:600;color:#334155" id="empty-title">Empty board</p>
+      <p style="font-size:12px;color:#1e293b" id="empty-sub">Double-click canvas or use the toolbar</p>
+    </div>
+    <div id="no-board" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
+      <p style="font-size:14px;font-weight:600;color:#334155">No board selected</p>
+      <button class="tb-btn" onclick="openNewBoard()" style="font-size:12px">Create your first board</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE BOARD CONFIRM MODAL -->
+<div class="overlay" id="del-board-overlay">
+  <div class="mbox" style="max-width:360px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <div style="width:32px;height:32px;border-radius:8px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg style="width:15px;height:15px;stroke:#f87171" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+      </div>
+      <p style="font-size:13px;font-weight:600;color:#e2e8f0">Delete board?</p>
+    </div>
+    <p style="font-size:12px;color:#64748b;margin-bottom:6px">This will permanently delete <strong id="del-board-name" style="color:#94a3b8"></strong> and all its nodes and connections.</p>
+    <p style="font-size:11.5px;color:#475569;margin-bottom:18px">This cannot be undone.</p>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="tb-btn" onclick="document.getElementById('del-board-overlay').classList.remove('show')">Cancel</button>
+      <button class="tb-btn" id="del-board-confirm-btn" style="background:rgba(239,68,68,0.15);border-color:rgba(239,68,68,0.4);color:#f87171">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- EXPORT TO PROJECT MODAL -->
+<div class="overlay" id="export-overlay">
+  <div class="mbox" style="max-width:380px">
+    <p style="font-size:13px;font-weight:600;color:#e2e8f0;margin-bottom:4px">Export Board to Project</p>
+    <p style="font-size:11.5px;color:#64748b;margin-bottom:14px" id="export-desc">Creates a new tracker project from this board's structure.</p>
+    <label class="lbl">Project name</label>
+    <input id="export-name" class="inp" type="text" style="margin-bottom:16px">
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="tb-btn" onclick="closeExportProject()">Cancel</button>
+      <button class="tb-btn" onclick="doExportProject()" style="background:rgba(16,185,129,0.15);border-color:rgba(16,185,129,0.4);color:#34d399">Create Project</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONTEXT MENU -->
+<div class="ctx-menu" id="ctx"></div>
+
+<!-- NEW BOARD MODAL -->
+<div class="overlay" id="new-board-overlay">
+  <div class="mbox">
+    <p style="font-size:13px;font-weight:600;color:#e2e8f0;margin-bottom:16px">New Board</p>
+    <label class="lbl">Board name</label>
+    <input id="nb-name" class="inp" type="text" placeholder="e.g. Product Ideas" style="margin-bottom:14px">
+    <label class="lbl" style="margin-bottom:8px">Board type</label>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:18px" id="nb-types">
+      <div class="type-card sel" data-type="freeform" onclick="selectBoardType('freeform')">
+        <div style="font-size:18px;margin-bottom:6px">💡</div>
+        <div style="font-size:11.5px;font-weight:600;color:#e2e8f0">Freeform</div>
+        <div style="font-size:10.5px;color:#64748b;margin-top:2px">Ideas + connections</div>
+      </div>
+      <div class="type-card" data-type="flowchart" onclick="selectBoardType('flowchart')">
+        <div style="font-size:18px;margin-bottom:6px">🔷</div>
+        <div style="font-size:11.5px;font-weight:600;color:#e2e8f0">Flowchart</div>
+        <div style="font-size:10.5px;color:#64748b;margin-top:2px">Process & decisions</div>
+      </div>
+      <div class="type-card" data-type="problem" onclick="selectBoardType('problem')">
+        <div style="font-size:18px;margin-bottom:6px">🎯</div>
+        <div style="font-size:11.5px;font-weight:600;color:#e2e8f0">Problem Solving</div>
+        <div style="font-size:10.5px;color:#64748b;margin-top:2px">Map solutions & risks</div>
+      </div>
+      <div class="type-card" data-type="fiction" onclick="selectBoardType('fiction')">
+        <div style="font-size:18px;margin-bottom:6px">📖</div>
+        <div style="font-size:11.5px;font-weight:600;color:#e2e8f0">Fiction</div>
+        <div style="font-size:10.5px;color:#64748b;margin-top:2px">Characters, scenes, arcs</div>
+      </div>
+      <div class="type-card" data-type="nonfiction" onclick="selectBoardType('nonfiction')" style="margin-top:0">
+        <div style="font-size:18px;margin-bottom:6px">📝</div>
+        <div style="font-size:11.5px;font-weight:600;color:#e2e8f0">Nonfiction</div>
+        <div style="font-size:10.5px;color:#64748b;margin-top:2px">Arguments & evidence</div>
+      </div>
+      <div class="type-card" data-type="research" onclick="selectBoardType('research')">
+        <div style="font-size:18px;margin-bottom:6px">🔬</div>
+        <div style="font-size:11.5px;font-weight:600;color:#e2e8f0">Research Paper</div>
+        <div style="font-size:10.5px;color:#64748b;margin-top:2px">Hypothesis to findings</div>
+      </div>
+    </div>
+    <!-- Fiction sub-type selector — shown only when Fiction is selected -->
+    <div id="fiction-subtype-wrap" style="display:none;margin-top:-6px;margin-bottom:14px;padding:10px 12px;background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.18);border-radius:8px">
+      <div style="font-size:10.5px;font-weight:600;color:#fbbf24;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Fiction Style</div>
+      <div style="display:flex;gap:8px">
+        <label id="fst-normal" onclick="selectFictionStyle('fiction')" style="flex:1;display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 10px;border-radius:7px;border:1.5px solid rgba(245,158,11,0.5);background:rgba(245,158,11,0.12)">
+          <input type="radio" name="fiction-style" value="fiction" checked style="display:none">
+          <span style="font-size:13px">📖</span>
+          <div>
+            <div style="font-size:11.5px;font-weight:600;color:#fbbf24">Normal</div>
+            <div style="font-size:10px;color:#64748b">Characters, scenes, arcs</div>
+          </div>
+        </label>
+        <label id="fst-15beats" onclick="selectFictionStyle('fiction_15beats')" style="flex:1;display:flex;align-items:center;gap:8px;cursor:pointer;padding:8px 10px;border-radius:7px;border:1.5px solid rgba(255,255,255,0.08);background:transparent">
+          <input type="radio" name="fiction-style" value="fiction_15beats" style="display:none">
+          <span style="font-size:13px">🎬</span>
+          <div>
+            <div style="font-size:11.5px;font-weight:600;color:#94a3b8">15 Beats</div>
+            <div style="font-size:10px;color:#64748b">Save the Cat! beat sheet</div>
+          </div>
+        </label>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="tb-btn" onclick="closeNewBoard()">Cancel</button>
+      <button class="tb-btn" onclick="createBoard()" style="background:rgba(99,102,241,0.18);border-color:rgba(99,102,241,0.4);color:#a5b4fc">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT NODE MODAL -->
+<div class="overlay" id="edit-overlay">
+  <div class="mbox">
+    <p style="font-size:13px;font-weight:600;color:#e2e8f0;margin-bottom:14px" id="edit-modal-title">Edit</p>
+    <label class="lbl">Title</label>
+    <input id="e-title" class="inp" type="text" style="margin-bottom:10px">
+    <label class="lbl">Description / notes</label>
+    <textarea id="e-desc" class="inp" style="margin-bottom:12px"></textarea>
+    <div id="e-extra"></div>
+    <div id="e-color-row" style="margin-bottom:16px">
+      <label class="lbl" style="margin-bottom:6px">Color</label>
+      <div id="e-colors" style="display:flex;gap:7px;flex-wrap:wrap"></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="tb-btn" onclick="closeEdit()">Cancel</button>
+      <button class="tb-btn" onclick="saveEdit()" style="background:rgba(99,102,241,0.18);border-color:rgba(99,102,241,0.4);color:#a5b4fc">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDGE LABEL MODAL -->
+<div class="overlay" id="edge-overlay">
+  <div class="mbox" style="max-width:340px">
+    <p style="font-size:13px;font-weight:600;color:#e2e8f0;margin-bottom:12px">Edge label</p>
+    <input id="edge-label-inp" class="inp" type="text" placeholder="e.g. Yes, No, leads to…" style="margin-bottom:16px">
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="tb-btn" onclick="closeEdgeLabel()">Cancel</button>
+      <button class="tb-btn" onclick="saveEdgeLabel()" style="background:rgba(99,102,241,0.18);border-color:rgba(99,102,241,0.4);color:#a5b4fc">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONVERT MODAL -->
+<div class="overlay" id="conv-overlay">
+  <div class="mbox">
+    <p style="font-size:13px;font-weight:600;color:#e2e8f0;margin-bottom:4px">Convert to Tracker Item</p>
+    <p style="font-size:11.5px;color:#64748b;margin-bottom:14px">Turn this idea into an epic, story, or task.</p>
+    <label class="lbl">Convert as</label>
+    <select id="conv-type" class="inp" style="margin-bottom:10px" onchange="onConvTypeChange()">
+      <option value="epic">Epic</option>
+      <option value="story">Story (inside an epic)</option>
+      <option value="task">Task (inside a story)</option>
+    </select>
+    <label class="lbl">Project</label>
+    <select id="conv-proj" class="inp" style="margin-bottom:10px" onchange="onConvProjChange()"></select>
+    <div id="conv-epic-row" style="display:none">
+      <label class="lbl">Epic</label>
+      <select id="conv-epic" class="inp" style="margin-bottom:10px" onchange="onConvEpicChange()"></select>
+    </div>
+    <div id="conv-story-row" style="display:none">
+      <label class="lbl">Story</label>
+      <select id="conv-story" class="inp" style="margin-bottom:10px"></select>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">
+      <button class="tb-btn" onclick="closeConv()">Cancel</button>
+      <button class="tb-btn" onclick="doConvert()" style="background:rgba(99,102,241,0.18);border-color:rgba(99,102,241,0.4);color:#a5b4fc">Convert</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ── CONSTANTS ─────────────────────────────────────────────────
+const COLORS = ['#6366f1','#f59e0b','#10b981','#ef4444','#3b82f6','#ec4899','#8b5cf6','#06b6d4','#f97316','#84cc16'];
+
+const BOARD_ICONS = { freeform:'💡', flowchart:'🔷', problem:'🎯', fiction:'📖', fiction_15beats:'🎬', nonfiction:'📝', research:'🔬' };
+const BOARD_LABELS= { freeform:'Freeform', flowchart:'Flowchart', problem:'Problem Solving', fiction:'Fiction', fiction_15beats:'Fiction · 15 Beats', nonfiction:'Nonfiction', research:'Research Paper' };
+
+const SAVE_THE_CAT_BEATS = [
+  { num:1,  name:'Opening Image',     pct:'0–1%',    act:1, hint:'Visual "before" snapshot of the hero — who they are and what their world looks like before transformation.' },
+  { num:2,  name:'Theme Stated',      pct:'5%',      act:1, hint:'A character (not the hero) hints at the life lesson the hero must learn by the end.' },
+  { num:3,  name:'Setup',             pct:'1–10%',   act:1, hint:'Explore the hero\'s flawed status quo, introduce supporting characters, hint at stakes, show reluctance to change.' },
+  { num:4,  name:'Catalyst',          pct:'10%',     act:1, hint:'A life-changing inciting incident — big enough that the hero can\'t return to their old life.' },
+  { num:5,  name:'Debate',            pct:'10–20%',  act:1, hint:'The hero debates what to do next. "Should I go?" Shows reluctance to change and enter Act 2.' },
+  { num:6,  name:'Break Into 2',      pct:'20%',     act:2, hint:'Hero accepts the call, leaves their comfort zone. Decisive action — old world ends, new upside-down world begins.' },
+  { num:7,  name:'B Story',           pct:'22%',     act:2, hint:'Introduce a helper character (love interest, mentor, nemesis) who will help the hero learn the theme.' },
+  { num:8,  name:'Fun and Games',     pct:'20–50%',  act:2, hint:'"Promise of the premise" — hero in their new world, pursuing the Act 2 goal. This is why the reader picked up the book.' },
+  { num:9,  name:'Midpoint',          pct:'50%',     act:2, hint:'False victory or false defeat. Stakes raised. Something happens to push the hero toward real change.' },
+  { num:10, name:'Bad Guys Close In', pct:'50–75%',  act:2, hint:'Things get worse (or deceptively better). Internal flaws closing in. New or modified goal post-Midpoint.' },
+  { num:11, name:'All Is Lost',       pct:'75%',     act:2, hint:'The hero\'s lowest point. Something dies (literally or metaphorically) — the death of the old hero.' },
+  { num:12, name:'Dark Night of Soul',pct:'75–80%',  act:2, hint:'Hero processes rock bottom. Darkest before dawn — right before the "aha" breakthrough moment.' },
+  { num:13, name:'Break Into 3',      pct:'80%',     act:3, hint:'"Aha!" moment — the hero knows what must be done to fix the external problem and transform internally.' },
+  { num:14, name:'Finale',            pct:'80–99%',  act:3, hint:'Hero proves they\'ve changed. Bad guys defeated, flaws conquered, lovers reunited. World saved and better.' },
+  { num:15, name:'Final Image',       pct:'99–100%', act:3, hint:'"After" snapshot — mirror to the Opening Image, showing the hero\'s completed transformation.' },
+];
+
+// node_type → defaults
+const NODE_DEFS = {
+  // freeform
+  idea:     { label:'Idea',     color:'#6366f1', showColor:true  },
+  // flowchart
+  start:    { label:'Start',    color:'#10b981', showColor:false },
+  process:  { label:'Process',  color:'#3b82f6', showColor:false },
+  decision: { label:'Decision', color:'#f59e0b', showColor:false },
+  end:      { label:'End',      color:'#ef4444', showColor:false },
+  // problem solving
+  problem:  { label:'Problem',  color:'#ef4444', showColor:false },
+  solution: { label:'Solution', color:'#6366f1', showColor:false },
+  risk:     { label:'Risk',     color:'#f59e0b', showColor:false },
+  benefit:  { label:'Benefit',  color:'#10b981', showColor:false },
+  obstacle: { label:'Obstacle', color:'#94a3b8', showColor:false },
+  // fiction
+  chapter:    { label:'Chapter',    color:'#f59e0b', showColor:false },
+  character:  { label:'Character',  color:'#8b5cf6', showColor:false },
+  scene:      { label:'Scene',      color:'#3b82f6', showColor:false },
+  plot_point: { label:'Plot Point', color:'#f97316', showColor:false },
+  setting:    { label:'Setting',    color:'#14b8a6', showColor:false },
+  theme:      { label:'Theme',      color:'#ec4899', showColor:false },
+  conflict:   { label:'Conflict',   color:'#ef4444', showColor:false },
+  arc:        { label:'Arc',        color:'#6366f1', showColor:false },
+  beat:       { label:'Beat',       color:'#6366f1', showColor:false },
+  // nonfiction
+  section:    { label:'Section',    color:'#6366f1', showColor:false },
+  argument:   { label:'Argument',   color:'#818cf8', showColor:false },
+  evidence:   { label:'Evidence',   color:'#10b981', showColor:false },
+  key_point:  { label:'Key Point',  color:'#f97316', showColor:false },
+  source:     { label:'Source',     color:'#64748b', showColor:false },
+  conclusion: { label:'Conclusion', color:'#ef4444', showColor:false },
+  // research
+  hypothesis:  { label:'Hypothesis',  color:'#8b5cf6', showColor:false },
+  methodology: { label:'Methodology', color:'#3b82f6', showColor:false },
+  lit_review:  { label:'Lit Review',  color:'#a855f7', showColor:false },
+  finding:     { label:'Finding',     color:'#14b8a6', showColor:false },
+  citation:    { label:'Citation',    color:'#64748b', showColor:false },
+  analysis:    { label:'Analysis',    color:'#f97316', showColor:false },
+};
+
+// ── STATE ─────────────────────────────────────────────────────
+let boards   = [];
+let nodes    = [];
+let edges    = [];
+let projects = [];
+let board    = null; // active board object
+
+let pan      = { x:0, y:0 };
+let dragging = null, dragOff = {x:0,y:0};
+let isPan    = false, panStart = {x:0,y:0};
+let connecting = false, connectSrc = null;
+let editId   = null;
+let convId   = null;
+let convProjData = null;
+let edgeLabelId = null; // edge being labelled
+
+// ── DOM ───────────────────────────────────────────────────────
+const wrap       = document.getElementById('canvas-wrap');
+const nodesLayer = document.getElementById('nodes-layer');
+const edgesSvg   = document.getElementById('edges-svg');
+const wireSvg    = document.getElementById('wire-svg');
+const ctx        = document.getElementById('ctx');
+const empty      = document.getElementById('empty');
+const noBoard    = document.getElementById('no-board');
+
+// ── INIT ──────────────────────────────────────────────────────
+async function init() {
+  const [bRes, dRes] = await Promise.all([
+    fetch('/api/brainstorm/boards'), fetch('/api/data')
+  ]);
+  boards   = await bRes.json();
+  const d  = await dRes.json();
+  projects = d.projects || [];
+  renderBoardList();
+  if (boards.length) selectBoard(boards[0].id);
+}
+
+// ── BOARD LIST ────────────────────────────────────────────────
+function renderBoardList() {
+  const el = document.getElementById('board-list');
+  if (!boards.length) {
+    el.innerHTML = `<p style="font-size:11px;color:#475569;padding:10px 14px">No boards yet — click New</p>`;
+    return;
+  }
+  el.innerHTML = boards.map(b => `
+    <div class="board-item ${board?.id === b.id ? 'active' : ''}" onclick="selectBoard('${b.id}')">
+      <div class="board-icon" style="background:rgba(255,255,255,0.05)">${BOARD_ICONS[b.type]||'📋'}</div>
+      <div style="flex:1;min-width:0">
+        <div class="board-name">${esc(b.name)}</div>
+        <div class="board-type-badge">${BOARD_LABELS[b.type]||b.type}</div>
+      </div>
+      <button onclick="event.stopPropagation();deleteBoardPrompt('${b.id}')" style="background:none;border:none;cursor:pointer;color:#334155;padding:2px;border-radius:4px;opacity:0;transition:opacity .13s" onmouseenter="this.style.opacity=1;this.style.color='#f87171'" onmouseleave="this.style.opacity=0;this.style.color='#334155'">
+        <svg style="width:11px;height:11px" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>`).join('');
+}
+
+async function selectBoard(id) {
+  board = boards.find(b => b.id === id);
+  if (!board) return;
+  renderBoardList();
+  const res  = await fetch('/api/brainstorm?board=' + id);
+  const data = await res.json();
+  nodes = data.nodes || [];
+  edges = data.edges || [];
+  pan   = {x:0,y:0};
+  renderAll();
+  updateToolbar();
+  updateEmpty();
+  noBoard.style.display = 'none';
+}
+
+// ── NEW BOARD ─────────────────────────────────────────────────
+let newBoardType = 'freeform';
+function openNewBoard() {
+  newBoardType = 'freeform';
+  document.querySelectorAll('.type-card').forEach(c => c.classList.toggle('sel', c.dataset.type === 'freeform'));
+  document.getElementById('nb-name').value = '';
+  document.getElementById('fiction-subtype-wrap').style.display = 'none';
+  document.querySelector('[name=fiction-style][value=fiction]').checked = true;
+  highlightFictionSubtype('fiction');
+  document.getElementById('new-board-overlay').classList.add('show');
+  setTimeout(()=>document.getElementById('nb-name').focus(),50);
+}
+function closeNewBoard() { document.getElementById('new-board-overlay').classList.remove('show'); }
+function selectBoardType(t) {
+  const isFiction = t === 'fiction';
+  const wrap = document.getElementById('fiction-subtype-wrap');
+  wrap.style.display = isFiction ? 'block' : 'none';
+  if (isFiction) {
+    // read current radio selection
+    const checked = document.querySelector('[name=fiction-style]:checked');
+    newBoardType = checked ? checked.value : 'fiction';
+  } else {
+    newBoardType = t;
+  }
+  document.querySelectorAll('.type-card').forEach(c => c.classList.toggle('sel', c.dataset.type === t));
+}
+function selectFictionStyle(val) {
+  newBoardType = val;
+  highlightFictionSubtype(val);
+}
+function highlightFictionSubtype(val) {
+  const normalLbl  = document.getElementById('fst-normal');
+  const beatsLbl   = document.getElementById('fst-15beats');
+  if (!normalLbl || !beatsLbl) return;
+  const isBeats = val === 'fiction_15beats';
+  normalLbl.style.border  = isBeats ? '1.5px solid rgba(255,255,255,0.08)' : '1.5px solid rgba(245,158,11,0.5)';
+  normalLbl.style.background = isBeats ? 'transparent' : 'rgba(245,158,11,0.12)';
+  normalLbl.querySelector('div div:first-child').style.color = isBeats ? '#94a3b8' : '#fbbf24';
+  beatsLbl.style.border   = isBeats ? '1.5px solid rgba(99,102,241,0.5)' : '1.5px solid rgba(255,255,255,0.08)';
+  beatsLbl.style.background = isBeats ? 'rgba(99,102,241,0.12)' : 'transparent';
+  beatsLbl.querySelector('div div:first-child').style.color = isBeats ? '#a5b4fc' : '#94a3b8';
+}
+async function createBoard() {
+  const name = document.getElementById('nb-name').value.trim() || 'New Board';
+  const res  = await fetch('/api/brainstorm/boards',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,type:newBoardType})});
+  const b    = await res.json();
+  boards.push(b);
+  closeNewBoard();
+  renderBoardList();
+  selectBoard(b.id);
+
+  // For problem solving boards: auto-create the root Problem node
+  if (newBoardType === 'problem') {
+    const r = wrap.getBoundingClientRect();
+    await addNode('problem', r.width/2 - 100, 80, 'Define the problem');
+  }
+
+  // For 15 Beats boards: auto-populate all 15 Save the Cat! beat nodes
+  if (newBoardType === 'fiction_15beats') {
+    await createBeats(b.id);
+  }
+}
+
+async function createBeats(boardId) {
+  // Layout: 5 columns × 3 rows, each beat node is 230px wide
+  const cols = 5;
+  const nodeW = 240; // 230 + 10 gap
+  const nodeH = 200;
+  const padX  = 40;
+  const padY  = 40;
+  for (let i = 0; i < SAVE_THE_CAT_BEATS.length; i++) {
+    const beat = SAVE_THE_CAT_BEATS[i];
+    const col  = i % cols;
+    const row  = Math.floor(i / cols);
+    const x    = padX + col * (nodeW + 20);
+    const y    = padY + row * (nodeH + 20);
+    const actColor = beat.act === 1 ? '#f59e0b' : beat.act === 3 ? '#10b981' : '#6366f1';
+    const body = {
+      board_id: boardId,
+      title: beat.name,
+      description: '',
+      color: actColor,
+      node_type: 'beat',
+      x,
+      y,
+      metadata: { beatNum: beat.num, pct: beat.pct, act: beat.act, hint: beat.hint }
+    };
+    const r = await fetch('/api/brainstorm/nodes', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+    const node = await r.json();
+    nodes.push(node);
+    mountNode(node);
+  }
+  updateEmpty();
+}
+
+async function addBeat() {
+  if (!board) return;
+  // Find the next beat number not yet on the board
+  const existing = nodes.filter(n => n.node_type === 'beat');
+  const usedNums = new Set(existing.map(n => { try { return JSON.parse(n.metadata||'{}').beatNum; } catch { return null; } }));
+  const next = SAVE_THE_CAT_BEATS.find(b => !usedNums.has(b.num));
+  if (!next) return; // all 15 beats already present
+  const actColor = next.act === 1 ? '#f59e0b' : next.act === 3 ? '#10b981' : '#6366f1';
+  const r = wrap.getBoundingClientRect();
+  const x = Math.random() * Math.max(200, r.width - 280) + 20;
+  const y = Math.random() * Math.max(100, r.height - 220) + 20;
+  const body = {
+    board_id: board.id,
+    title: next.name,
+    description: '',
+    color: actColor,
+    node_type: 'beat',
+    x: x - pan.x,
+    y: y - pan.y,
+    metadata: { beatNum: next.num, pct: next.pct, act: next.act, hint: next.hint }
+  };
+  const res  = await fetch('/api/brainstorm/nodes', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  const node = await res.json();
+  nodes.push(node);
+  mountNode(node);
+  updateEmpty();
+}
+let deletingBoardId = null;
+function deleteBoardPrompt(id) {
+  const b = boards.find(x=>x.id===id);
+  deletingBoardId = id;
+  document.getElementById('del-board-name').textContent = '"'+(b?.name||'this board')+'"';
+  document.getElementById('del-board-confirm-btn').onclick = confirmDeleteBoard;
+  document.getElementById('del-board-overlay').classList.add('show');
+}
+async function confirmDeleteBoard() {
+  if (!deletingBoardId) return;
+  document.getElementById('del-board-overlay').classList.remove('show');
+  await fetch('/api/brainstorm/boards/'+deletingBoardId,{method:'DELETE'});
+  boards = boards.filter(x=>x.id!==deletingBoardId);
+  if (board?.id===deletingBoardId) { board=null; nodes=[]; edges=[]; nodesLayer.innerHTML=''; edgesSvg.innerHTML=''; noBoard.style.display='flex'; empty.style.display='none'; updateToolbar(); }
+  deletingBoardId = null;
+  renderBoardList();
+}
+
+// ── TOOLBAR ───────────────────────────────────────────────────
+function updateToolbar() {
+  const tb = document.getElementById('toolbar');
+  if (!board) { tb.innerHTML=`<span style="font-size:11.5px;color:#2d3748" id="board-hint">Select a board to start</span>`; return; }
+  const type = board.type;
+  let html = '';
+
+  if (type === 'freeform') {
+    html = `
+      <button class="tb-btn" onclick="addNode('idea')"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>Add Idea</button>
+      <button class="tb-btn" id="btn-connect" onclick="toggleConnect()"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>Connect</button>`;
+  } else if (type === 'flowchart') {
+    html = `
+      <button class="tb-btn" onclick="addNode('start')">▶ Start</button>
+      <button class="tb-btn" onclick="addNode('process')">☐ Process</button>
+      <button class="tb-btn" onclick="addNode('decision')">◆ Decision</button>
+      <button class="tb-btn" onclick="addNode('end')">⏹ End</button>
+      <div class="tb-sep"></div>
+      <button class="tb-btn" id="btn-connect" onclick="toggleConnect()"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>Connect</button>`;
+  } else if (type === 'problem') {
+    html = `
+      <button class="tb-btn" onclick="addNode('problem')" style="color:#f87171;border-color:rgba(239,68,68,0.3)">⬡ Problem</button>
+      <button class="tb-btn" onclick="addNode('solution')" style="color:#a5b4fc;border-color:rgba(99,102,241,0.3)">✦ Solution</button>
+      <button class="tb-btn" onclick="addNode('risk')"     style="color:#fbbf24;border-color:rgba(245,158,11,0.3)">⚠ Risk</button>
+      <button class="tb-btn" onclick="addNode('benefit')"  style="color:#34d399;border-color:rgba(16,185,129,0.3)">✓ Benefit</button>
+      <button class="tb-btn" onclick="addNode('obstacle')" style="color:#94a3b8">◌ Obstacle</button>
+      <div class="tb-sep"></div>
+      <button class="tb-btn" id="btn-connect" onclick="toggleConnect()"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>Connect</button>`;
+  } else if (type === 'fiction_15beats') {
+    html = `
+      <span style="font-size:11px;color:#475569;font-weight:600;padding:0 4px">🎬 Save the Cat! · 15 Beats</span>
+      <div class="tb-sep"></div>
+      <button class="tb-btn" onclick="addBeat()" style="color:#a5b4fc;border-color:rgba(99,102,241,0.35)">+ Add Beat</button>
+      <div class="tb-sep"></div>
+      <button class="tb-btn" id="btn-connect" onclick="toggleConnect()"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>Connect</button>`;
+  } else if (type === 'fiction') {
+    html = `
+      <button class="tb-btn" onclick="addNode('chapter')"    style="color:#fbbf24;border-color:rgba(245,158,11,0.35)">📖 Chapter</button>
+      <button class="tb-btn" onclick="addNode('character')"  style="color:#a78bfa;border-color:rgba(139,92,246,0.35)">👤 Character</button>
+      <button class="tb-btn" onclick="addNode('scene')"      style="color:#60a5fa;border-color:rgba(59,130,246,0.35)">🎬 Scene</button>
+      <button class="tb-btn" onclick="addNode('plot_point')" style="color:#fb923c;border-color:rgba(249,115,22,0.35)">⚡ Plot Point</button>
+      <button class="tb-btn" onclick="addNode('setting')"    style="color:#2dd4bf;border-color:rgba(20,184,166,0.35)">🌍 Setting</button>
+      <button class="tb-btn" onclick="addNode('theme')"      style="color:#f472b6;border-color:rgba(236,72,153,0.35)">✦ Theme</button>
+      <button class="tb-btn" onclick="addNode('conflict')"   style="color:#f87171;border-color:rgba(239,68,68,0.35)">⚔ Conflict</button>
+      <button class="tb-btn" onclick="addNode('arc')"        style="color:#818cf8;border-color:rgba(99,102,241,0.35)">↺ Arc</button>
+      <div class="tb-sep"></div>
+      <button class="tb-btn" id="btn-connect" onclick="toggleConnect()"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>Connect</button>`;
+  } else if (type === 'nonfiction') {
+    html = `
+      <button class="tb-btn" onclick="addNode('chapter')"    style="color:#fbbf24;border-color:rgba(245,158,11,0.35)">📖 Chapter</button>
+      <button class="tb-btn" onclick="addNode('section')"    style="color:#818cf8;border-color:rgba(99,102,241,0.35)">§ Section</button>
+      <button class="tb-btn" onclick="addNode('argument')"   style="color:#a5b4fc;border-color:rgba(129,140,248,0.35)">💬 Argument</button>
+      <button class="tb-btn" onclick="addNode('evidence')"   style="color:#34d399;border-color:rgba(16,185,129,0.35)">✓ Evidence</button>
+      <button class="tb-btn" onclick="addNode('key_point')"  style="color:#fb923c;border-color:rgba(249,115,22,0.35)">★ Key Point</button>
+      <button class="tb-btn" onclick="addNode('source')"     style="color:#94a3b8">⎙ Source</button>
+      <button class="tb-btn" onclick="addNode('conclusion')" style="color:#f87171;border-color:rgba(239,68,68,0.35)">◎ Conclusion</button>
+      <div class="tb-sep"></div>
+      <button class="tb-btn" id="btn-connect" onclick="toggleConnect()"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>Connect</button>`;
+  } else if (type === 'research') {
+    html = `
+      <button class="tb-btn" onclick="addNode('hypothesis')"  style="color:#a78bfa;border-color:rgba(139,92,246,0.35)">? Hypothesis</button>
+      <button class="tb-btn" onclick="addNode('methodology')" style="color:#60a5fa;border-color:rgba(59,130,246,0.35)">⚙ Methodology</button>
+      <button class="tb-btn" onclick="addNode('lit_review')"  style="color:#c084fc;border-color:rgba(168,85,247,0.35)">📚 Lit Review</button>
+      <button class="tb-btn" onclick="addNode('finding')"     style="color:#2dd4bf;border-color:rgba(20,184,166,0.35)">◈ Finding</button>
+      <button class="tb-btn" onclick="addNode('analysis')"    style="color:#fb923c;border-color:rgba(249,115,22,0.35)">⬡ Analysis</button>
+      <button class="tb-btn" onclick="addNode('citation')"    style="color:#94a3b8">⎙ Citation</button>
+      <button class="tb-btn" onclick="addNode('conclusion')"  style="color:#f87171;border-color:rgba(239,68,68,0.35)">◎ Conclusion</button>
+      <div class="tb-sep"></div>
+      <button class="tb-btn" id="btn-connect" onclick="toggleConnect()"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>Connect</button>`;
+  }
+
+  html += `<div class="tb-sep"></div><button class="tb-btn" onclick="fitView()"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>Fit</button>`;
+  html += `<div class="tb-sep"></div><button class="tb-btn ${board.auto_edit?'on':''}" id="btn-autoedit" onclick="toggleAutoEdit()" title="When on, new nodes open the edit popup automatically">✎ Auto-edit</button>`;
+  tb.innerHTML = html;
+}
+
+// ── RENDER ────────────────────────────────────────────────────
+function renderAll() {
+  nodesLayer.innerHTML = '';
+  nodes.forEach(mountNode);
+  renderEdges();
+}
+
+function nodeW(n) {
+  if (n.node_type==='decision') return 140;
+  if (['start','end'].includes(n.node_type)) return 140;
+  if (['problem','chapter'].includes(n.node_type)) return 200;
+  if (['hypothesis'].includes(n.node_type)) return 185;
+  if (['source','citation'].includes(n.node_type)) return 155;
+  if (['theme','conflict','evidence','key_point','obstacle','risk','benefit'].includes(n.node_type)) return 165;
+  if (['character','setting','lit_review','finding','analysis'].includes(n.node_type)) return 170;
+  if (['plot_point','section','argument','methodology','conclusion','arc'].includes(n.node_type)) return 175;
+  if (n.node_type === 'beat') return 230;
+  return 180;
+}
+function nodeH(n) {
+  if (n.node_type==='decision') return 80;
+  if (['start','end'].includes(n.node_type)) return 38;
+  return 60; // approx
+}
+
+function mountNode(n) {
+  const el = document.createElement('div');
+  el.className = 'node';
+  el.id = 'nd-'+n.id;
+  el.style.left = (n.x+pan.x)+'px';
+  el.style.top  = (n.y+pan.y)+'px';
+
+  const type = n.node_type || 'idea';
+
+  if (type === 'decision') {
+    el.classList.add('node-decision');
+    el.innerHTML = `
+      <div class="decision-diamond"></div>
+      <div class="decision-label">${esc(n.title)}</div>`;
+  } else if (type === 'start' || type === 'end') {
+    el.classList.add(`node-${type}`);
+    el.textContent = esc(n.title) || (type==='start'?'Start':'End');
+  } else if (type === 'beat') {
+    el.classList.add('node-beat');
+    const meta     = parseMeta(n);
+    const actNum   = meta.act || 1;
+    const actColor = actNum === 1 ? '#f59e0b' : actNum === 3 ? '#10b981' : '#6366f1';
+    const numBg    = actNum === 1 ? 'rgba(245,158,11,0.18)' : actNum === 3 ? 'rgba(16,185,129,0.18)' : 'rgba(99,102,241,0.18)';
+    el.innerHTML = `
+      <div class="beat-act-bar" style="background:${actColor}"></div>
+      <div class="beat-header">
+        <div class="beat-num" style="background:${numBg};color:${actColor}">${meta.beatNum||'?'}</div>
+        <div class="beat-title-col">
+          <div class="beat-name" title="${esc(n.title)}">${esc(n.title)}</div>
+          <div class="beat-pct">${esc(meta.pct||'')} · Act ${actNum}</div>
+        </div>
+      </div>
+      <div class="beat-body">
+        ${meta.hint ? `<div class="beat-hint">${esc(meta.hint.slice(0,110))}${meta.hint.length>110?'…':''}</div>` : ''}
+        ${n.description ? `<div class="beat-notes">${esc(n.description)}</div>` : ''}
+      </div>
+      <div class="n-actions">
+        <button class="n-btn" onclick="event.stopPropagation();openEdit('${n.id}')">✎ Edit</button>
+        <button class="n-btn del" onclick="event.stopPropagation();deleteNode('${n.id}')">✕</button>
+      </div>`;
+  } else {
+    el.classList.add(`node-${type}`);
+    const def = NODE_DEFS[type] || NODE_DEFS.idea;
+    const barColor = def.showColor ? n.color : getTypeColor(type);
+    const showBar  = ['idea','process'].includes(type);
+    // Build metadata preview (top 3 non-empty fields)
+    const metaFields = getMetaFields(n);
+    const metaData = parseMeta(n);
+    const metaPreview = metaFields.filter(f=>metaData[f.key]).slice(0,3)
+      .map(f=>`<span class="meta-tag"><strong>${esc(f.label)}:</strong> ${esc(String(metaData[f.key]).slice(0,30))}</span>`).join('');
+
+    el.innerHTML = `
+      ${showBar ? `<div class="n-bar" style="height:5px;background:${barColor};border-radius:9px 9px 0 0"></div>` : ''}
+      <div class="n-body" style="${!showBar?'padding:10px 12px 11px':''}">
+        ${!['idea'].includes(type) ? `<div class="n-label" style="color:${getTypeColor(type)}">${def.label}</div>` : ''}
+        <div class="n-title">${esc(n.title)}</div>
+        ${n.description ? `<div class="n-desc">${esc(n.description)}</div>` : ''}
+        ${metaPreview ? `<div class="meta-row">${metaPreview}</div>` : ''}
+      </div>
+      <div class="n-actions">
+        <button class="n-btn" onclick="event.stopPropagation();openEdit('${n.id}')">✎ Edit</button>
+        <button class="n-btn" onclick="event.stopPropagation();openConv('${n.id}')">→ Epic</button>
+        <button class="n-btn del" onclick="event.stopPropagation();deleteNode('${n.id}')">✕</button>
+      </div>`;
+  }
+
+  el.addEventListener('mousedown', e => {
+    if (e.button!==0) return;
+    if (connecting) { e.stopPropagation(); handleConnectClick(n,el); return; }
+    if (e.target.closest('.n-btn')) return;
+    e.stopPropagation();
+    dragging = n;
+    dragOff  = { x: e.clientX-(n.x+pan.x), y: e.clientY-(n.y+pan.y) };
+    el.classList.add('dragging');
+  });
+  el.addEventListener('contextmenu', e => { e.preventDefault(); e.stopPropagation(); showCtx(e,n); });
+  el.addEventListener('mouseenter', () => { if(connecting&&connectSrc&&connectSrc.id!==n.id) el.classList.add('connect-hover'); });
+  el.addEventListener('mouseleave', () => el.classList.remove('connect-hover'));
+
+  nodesLayer.appendChild(el);
+}
+
+function getTypeColor(type) {
+  const map = {
+    idea:'#6366f1',process:'#3b82f6',decision:'#f59e0b',start:'#10b981',end:'#ef4444',
+    problem:'#ef4444',solution:'#6366f1',risk:'#f59e0b',benefit:'#10b981',obstacle:'#94a3b8',
+    chapter:'#f59e0b',character:'#8b5cf6',scene:'#3b82f6',plot_point:'#f97316',
+    setting:'#14b8a6',theme:'#ec4899',conflict:'#ef4444',arc:'#6366f1',
+    section:'#6366f1',argument:'#818cf8',evidence:'#10b981',key_point:'#f97316',
+    source:'#64748b',conclusion:'#ef4444',
+    hypothesis:'#8b5cf6',methodology:'#3b82f6',lit_review:'#a855f7',
+    finding:'#14b8a6',citation:'#64748b',analysis:'#f97316',
+    beat:'#6366f1',
+  };
+  return map[type]||'#6366f1';
+}
+
+function posEl(el,n) { el.style.left=(n.x+pan.x)+'px'; el.style.top=(n.y+pan.y)+'px'; }
+
+function refreshNode(n) { document.getElementById('nd-'+n.id)?.remove(); mountNode(n); renderEdges(); }
+
+// ── EDGES ─────────────────────────────────────────────────────
+function nodeCenter(n) {
+  const w = nodeW(n)/2;
+  const h = (n.node_type==='decision')?40:30;
+  return { x: n.x+pan.x+w, y: n.y+pan.y+h };
+}
+
+function renderEdges() {
+  edgesSvg.innerHTML = '';
+  edges.forEach(edge => {
+    const src = nodes.find(n=>n.id===edge.source_id);
+    const tgt = nodes.find(n=>n.id===edge.target_id);
+    if (!src||!tgt) return;
+    const s=nodeCenter(src), t=nodeCenter(tgt);
+    const mx=(s.x+t.x)/2, my=(s.y+t.y)/2;
+    const d=`M${s.x},${s.y} C${mx},${s.y} ${mx},${t.y} ${t.x},${t.y}`;
+    const col = getTypeColor(src.node_type||'idea');
+
+    const g = svgEl('g');
+
+    // arrowhead marker
+    const markId = 'arr-'+edge.id;
+    const defs = svgEl('defs');
+    const marker = svgEl('marker');
+    marker.setAttribute('id',markId); marker.setAttribute('markerWidth','8'); marker.setAttribute('markerHeight','8');
+    marker.setAttribute('refX','6'); marker.setAttribute('refY','3'); marker.setAttribute('orient','auto');
+    const arrowPath = svgEl('path');
+    arrowPath.setAttribute('d','M0,0 L0,6 L8,3 z');
+    arrowPath.setAttribute('fill',col); arrowPath.setAttribute('fill-opacity','0.6');
+    marker.appendChild(arrowPath); defs.appendChild(marker); g.appendChild(defs);
+
+    const path = svgEl('path');
+    path.setAttribute('d',d); path.setAttribute('stroke',col); path.setAttribute('stroke-width','2');
+    path.setAttribute('stroke-opacity','0.45'); path.setAttribute('fill','none');
+    path.setAttribute('marker-end',`url(#${markId})`);
+
+    const hit = svgEl('path');
+    hit.setAttribute('d',d); hit.setAttribute('stroke','transparent'); hit.setAttribute('stroke-width','14');
+    hit.setAttribute('fill','none'); hit.style.cursor='pointer'; hit.style.pointerEvents='stroke';
+    hit.addEventListener('click', e=>{ e.stopPropagation(); showEdgeMenu(e,edge); });
+    hit.addEventListener('mouseenter', ()=>path.setAttribute('stroke-opacity','0.8'));
+    hit.addEventListener('mouseleave', ()=>path.setAttribute('stroke-opacity','0.45'));
+
+    g.appendChild(path); g.appendChild(hit);
+
+    // edge label
+    if (edge.label) {
+      const lbg = svgEl('rect');
+      lbg.setAttribute('x',mx-28); lbg.setAttribute('y',my-9);
+      lbg.setAttribute('width',56); lbg.setAttribute('height',18);
+      lbg.setAttribute('rx',4); lbg.setAttribute('fill','#1a2030');
+      lbg.setAttribute('stroke',col); lbg.setAttribute('stroke-opacity','0.4');
+      const lt = svgEl('text');
+      lt.setAttribute('x',mx); lt.setAttribute('y',my+4);
+      lt.setAttribute('text-anchor','middle'); lt.setAttribute('font-size','10');
+      lt.setAttribute('fill',col); lt.setAttribute('font-family','Inter,sans-serif');
+      lt.setAttribute('font-weight','600');
+      lt.textContent = edge.label;
+      g.appendChild(lbg); g.appendChild(lt);
+    }
+
+    edgesSvg.appendChild(g);
+  });
+}
+
+function svgEl(tag){ return document.createElementNS('http://www.w3.org/2000/svg',tag); }
+
+// ── WIRE PREVIEW ──────────────────────────────────────────────
+function drawWire(tx,ty) {
+  wireSvg.innerHTML='';
+  if (!connectSrc) return;
+  const s=nodeCenter(connectSrc);
+  const mx=(s.x+tx)/2;
+  const p=svgEl('path');
+  p.setAttribute('d',`M${s.x},${s.y} C${mx},${s.y} ${mx},${ty} ${tx},${ty}`);
+  p.setAttribute('stroke','#f59e0b'); p.setAttribute('stroke-width','2');
+  p.setAttribute('stroke-opacity','0.6'); p.setAttribute('stroke-dasharray','6 4'); p.setAttribute('fill','none');
+  wireSvg.appendChild(p);
+}
+function clearWire(){ wireSvg.innerHTML=''; }
+
+// ── DRAG / PAN ────────────────────────────────────────────────
+wrap.addEventListener('mousedown', e=>{
+  if (e.button!==0||connecting) return;
+  isPan=true; panStart={x:e.clientX-pan.x, y:e.clientY-pan.y}; closeCtx();
+});
+
+document.addEventListener('mousemove', e=>{
+  const r=wrap.getBoundingClientRect();
+  const mx=e.clientX-r.left, my=e.clientY-r.top;
+  if (dragging) {
+    dragging.x=e.clientX-dragOff.x-pan.x; dragging.y=e.clientY-dragOff.y-pan.y;
+    const el=document.getElementById('nd-'+dragging.id);
+    if(el) posEl(el,dragging);
+    renderEdges();
+  } else if (isPan) {
+    pan={x:e.clientX-panStart.x, y:e.clientY-panStart.y};
+    nodes.forEach(n=>{ const el=document.getElementById('nd-'+n.id); if(el) posEl(el,n); });
+    renderEdges();
+  }
+  if (connecting&&connectSrc) drawWire(mx,my);
+});
+
+document.addEventListener('mouseup', async e=>{
+  if (dragging) {
+    const n=dragging; dragging=null;
+    document.getElementById('nd-'+n.id)?.classList.remove('dragging');
+    await fetch(`/api/brainstorm/nodes/${n.id}`,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({x:n.x,y:n.y})});
+  }
+  isPan=false;
+});
+
+wrap.addEventListener('dblclick', e=>{
+  if (!board) return;
+  if (e.target.closest('.node')) return;
+  const r=wrap.getBoundingClientRect();
+  const x=e.clientX-r.left-pan.x-90, y=e.clientY-r.top-pan.y-30;
+  const defaultType = board.type==='flowchart'?'process': board.type==='problem'?'solution':'idea';
+  addNode(defaultType, x, y);
+});
+
+wrap.addEventListener('click', e=>{
+  if (e.target.closest('.node')||e.target.closest('.ctx-menu')) return;
+  closeCtx();
+  if (connecting) cancelConnect();
+});
+
+// ── CONNECT ───────────────────────────────────────────────────
+function toggleConnect() {
+  connecting=!connecting; connectSrc=null;
+  const btn=document.getElementById('btn-connect');
+  if(btn) btn.classList.toggle('on',connecting);
+  wrap.classList.toggle('connecting',connecting);
+  clearWire();
+  document.querySelectorAll('.node').forEach(el=>el.classList.remove('connect-source','connect-hover'));
+}
+function cancelConnect() {
+  connecting=false; connectSrc=null;
+  const btn=document.getElementById('btn-connect');
+  if(btn) btn.classList.remove('on');
+  wrap.classList.remove('connecting');
+  clearWire();
+  document.querySelectorAll('.node').forEach(el=>el.classList.remove('connect-source','connect-hover'));
+}
+async function handleConnectClick(n,el) {
+  if (!connectSrc) {
+    connectSrc=n;
+    document.querySelectorAll('.node').forEach(x=>x.classList.remove('connect-source'));
+    el.classList.add('connect-source');
+  } else if (connectSrc.id===n.id) {
+    cancelConnect();
+  } else {
+    const res=await fetch('/api/brainstorm/edges',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({board_id:board.id,source_id:connectSrc.id,target_id:n.id,label:''})});
+    const edge=await res.json();
+    if (!edges.find(e=>e.id===edge.id)) edges.push(edge);
+    cancelConnect();
+    renderEdges();
+    // for flowchart, offer to label
+    if (board.type==='flowchart') openEdgeLabel(edge.id);
+  }
+}
+
+// ── EDGE LABEL ────────────────────────────────────────────────
+function openEdgeLabel(id) {
+  edgeLabelId=id;
+  const edge=edges.find(e=>e.id===id);
+  document.getElementById('edge-label-inp').value=edge?.label||'';
+  document.getElementById('edge-overlay').classList.add('show');
+  setTimeout(()=>document.getElementById('edge-label-inp').focus(),50);
+}
+function closeEdgeLabel(){ document.getElementById('edge-overlay').classList.remove('show'); edgeLabelId=null; }
+async function saveEdgeLabel(){
+  const label=document.getElementById('edge-label-inp').value.trim();
+  await fetch('/api/brainstorm/edges/'+edgeLabelId,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({label})});
+  const idx=edges.findIndex(e=>e.id===edgeLabelId);
+  if(idx!==-1) edges[idx].label=label;
+  closeEdgeLabel(); renderEdges();
+}
+
+// ── ADD NODE ──────────────────────────────────────────────────
+async function addNode(node_type, x, y, defaultTitle) {
+  if (!board) return;
+  const def   = NODE_DEFS[node_type]||NODE_DEFS.idea;
+  const color = def.color;
+  const r     = wrap.getBoundingClientRect();
+  const nx    = x ?? (Math.random()*300+80);
+  const ny    = y ?? (Math.random()*200+60);
+  const title = defaultTitle || def.label;
+  const res = await fetch('/api/brainstorm/nodes',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({board_id:board.id,title,description:'',color,node_type,x:nx-pan.x,y:ny-pan.y})});
+  const node=await res.json();
+  nodes.push(node);
+  mountNode(node);
+  updateEmpty();
+  if (board.auto_edit && node_type!=='start'&&node_type!=='end') openEdit(node.id);
+}
+
+async function toggleAutoEdit() {
+  if (!board) return;
+  board.auto_edit = board.auto_edit ? 0 : 1;
+  await fetch('/api/brainstorm/boards/'+board.id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({auto_edit:board.auto_edit})});
+  const btn = document.getElementById('btn-autoedit');
+  if (btn) btn.classList.toggle('on', !!board.auto_edit);
+}
+
+// ── SMART CHILD ADD (problem solving) ────────────────────────
+async function addChildNode(parentId, childType) {
+  const parent = nodes.find(n=>n.id===parentId);
+  if (!parent||!board) return;
+  const def = NODE_DEFS[childType]||NODE_DEFS.solution;
+  // place to the right and below
+  const childCount = edges.filter(e=>e.source_id===parentId).length;
+  const nx = parent.x + 220;
+  const ny = parent.y + childCount * 100;
+  const res = await fetch('/api/brainstorm/nodes',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({board_id:board.id,title:def.label,description:'',color:def.color,node_type:childType,x:nx,y:ny})});
+  const child=await res.json();
+  nodes.push(child);
+  // auto-connect
+  const eRes=await fetch('/api/brainstorm/edges',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({board_id:board.id,source_id:parentId,target_id:child.id,label:''})});
+  const edge=await eRes.json();
+  if(!edges.find(e=>e.id===edge.id)) edges.push(edge);
+  mountNode(child);
+  renderEdges();
+  updateEmpty();
+  if (board.auto_edit) openEdit(child.id);
+}
+
+// ── DELETE NODE ───────────────────────────────────────────────
+async function deleteNode(id) {
+  closeCtx();
+  await fetch('/api/brainstorm/nodes/'+id,{method:'DELETE'});
+  nodes=nodes.filter(n=>n.id!==id);
+  edges=edges.filter(e=>e.source_id!==id&&e.target_id!==id);
+  document.getElementById('nd-'+id)?.remove();
+  renderEdges(); updateEmpty();
+}
+
+// ── CONTEXT MENU ──────────────────────────────────────────────
+function showCtx(e,n) {
+  closeCtx();
+  const type = n.node_type||'idea';
+  const boardType = board?.type||'freeform';
+  let items = `
+    ${ctxItem('Edit','M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z',`openEdit('${n.id}');closeCtx()`)}
+    ${ctxItem('Connect from here','M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1',`startConnect('${n.id}');closeCtx()`)}
+    ${ctxItem('Convert → Tracker item','M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4',`openConv('${n.id}');closeCtx()`)}`;
+
+  // Problem solving smart additions
+  if (boardType==='problem') {
+    items += `<div class="ctx-sep"></div>`;
+    if (type==='problem') {
+      items += ctxItem('+ Add Solution','M12 4v16m8-8H4',`addChildNode('${n.id}','solution');closeCtx()`,'#a5b4fc');
+    }
+    if (type==='solution') {
+      items += ctxItem('+ Add Risk','M12 9v2m0 4h.01',`addChildNode('${n.id}','risk');closeCtx()`,'#fbbf24');
+      items += ctxItem('+ Add Benefit','M5 13l4 4L19 7',`addChildNode('${n.id}','benefit');closeCtx()`,'#34d399');
+      items += ctxItem('+ Add Obstacle','M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636',`addChildNode('${n.id}','obstacle');closeCtx()`,'#94a3b8');
+      items += ctxItem('+ Sub-problem','M12 4v16m8-8H4',`addChildNode('${n.id}','problem');closeCtx()`,'#f87171');
+    }
+  }
+
+  // Flowchart
+  if (boardType==='flowchart' && type==='decision') {
+    items += `<div class="ctx-sep"></div>`;
+    items += ctxItem('Connect (Yes)','M5 13l4 4L19 7',`startConnectWithLabel('${n.id}','Yes');closeCtx()`,'#34d399');
+    items += ctxItem('Connect (No)','M6 18L18 6M6 6l12 12',`startConnectWithLabel('${n.id}','No');closeCtx()`,'#f87171');
+  }
+
+  items += `<div class="ctx-sep"></div>${ctxItem('Delete','M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16',"deleteNode('"+n.id+"')",null,true)}`;
+
+  ctx.innerHTML = items;
+  ctx.style.left = Math.min(e.clientX,window.innerWidth-190)+'px';
+  ctx.style.top  = Math.min(e.clientY,window.innerHeight-280)+'px';
+  ctx.style.display='block';
+}
+
+function showEdgeMenu(e,edge) {
+  closeCtx();
+  ctx.innerHTML = `
+    ${ctxItem('Edit label','M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z',`openEdgeLabel('${edge.id}');closeCtx()`)}
+    <div class="ctx-sep"></div>
+    ${ctxItem('Remove connection','M6 18L18 6M6 6l12 12',`removeEdge('${edge.id}')`,null,true)}`;
+  ctx.style.left=Math.min(e.clientX,window.innerWidth-190)+'px';
+  ctx.style.top=Math.min(e.clientY,window.innerHeight-120)+'px';
+  ctx.style.display='block';
+}
+
+function ctxItem(label,icon,action,color,danger=false){
+  const col=danger?'#f87171':color||'#94a3b8';
+  return `<button class="ctx-item${danger?' danger':''}" onclick="${action}" style="color:${col}">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${icon}"/></svg>
+    ${label}</button>`;
+}
+
+function closeCtx(){ ctx.style.display='none'; }
+document.addEventListener('click', e=>{ if(!ctx.contains(e.target)) closeCtx(); });
+
+function startConnect(nodeId){
+  if(!connecting) toggleConnect();
+  connectSrc=nodes.find(n=>n.id===nodeId)||null;
+  document.querySelectorAll('.node').forEach(el=>el.classList.remove('connect-source'));
+  document.getElementById('nd-'+nodeId)?.classList.add('connect-source');
+}
+
+let pendingEdgeLabel='';
+async function startConnectWithLabel(nodeId,label){
+  pendingEdgeLabel=label;
+  startConnect(nodeId);
+  // monkey-patch: after next edge is created, set label automatically
+  const orig=handleConnectClick;
+  // We'll set the label when the edge is created by overriding temporarily
+  // Actually simpler: just use startConnect, user clicks target, edge dialog auto-filled
+  document.getElementById('edge-label-inp') && (document.getElementById('edge-label-inp').value=label);
+}
+
+async function removeEdge(id){
+  closeCtx();
+  await fetch('/api/brainstorm/edges/'+id,{method:'DELETE'});
+  edges=edges.filter(e=>e.id!==id);
+  renderEdges();
+}
+
+// ── META FIELD DEFINITIONS ────────────────────────────────────
+const META_FIELDS = {
+  'fiction:chapter': [
+    {key:'pov',       label:'POV Character',    type:'text',     ph:'Who leads this chapter?'},
+    {key:'location',  label:'Location',          type:'text',     ph:'Where does it take place?'},
+    {key:'timeline',  label:'Timeline Position', type:'text',     ph:'e.g. Act 2, Day 7'},
+    {key:'goal',      label:'Chapter Goal',      type:'text',     ph:'What does the protagonist want?'},
+    {key:'conflict',  label:'Central Conflict',  type:'text',     ph:'What gets in the way?'},
+    {key:'outcome',   label:'Outcome',           type:'text',     ph:'How does it resolve?'},
+    {key:'wordcount', label:'Word Count Target', type:'number',   ph:'e.g. 3000'},
+  ],
+  'fiction:character': [
+    {key:'role',       label:'Role',         type:'select', opts:['Protagonist','Antagonist','Supporting','Mentor','Love Interest','Other']},
+    {key:'age',        label:'Age',          type:'text',   ph:'e.g. 32'},
+    {key:'motivation', label:'Motivation',   type:'text',   ph:'What drives them?'},
+    {key:'flaw',       label:'Core Flaw',    type:'text',   ph:'What holds them back?'},
+    {key:'arc',        label:'Character Arc',type:'text',   ph:'How do they change by the end?'},
+  ],
+  'fiction:scene': [
+    {key:'pov',      label:'POV Character', type:'text', ph:'Whose perspective?'},
+    {key:'location', label:'Location',      type:'text', ph:'Where?'},
+    {key:'when',     label:'When',          type:'text', ph:'e.g. Night, after the party'},
+    {key:'goal',     label:'Scene Goal',    type:'text', ph:'What must happen in this scene?'},
+    {key:'tension',  label:'Tension',       type:'text', ph:'What creates conflict or stakes?'},
+  ],
+  'fiction:arc': [
+    {key:'arc_type',    label:'Arc Type',          type:'select', opts:['Character','Plot','Theme','Relationship','Redemption','Fall','Coming of Age']},
+    {key:'start_state', label:'Starting State',    type:'text',   ph:'Where does this arc begin?'},
+    {key:'end_state',   label:'Ending State',      type:'text',   ph:'Where does it resolve?'},
+    {key:'characters',  label:'Characters Involved',type:'text',  ph:'Who is affected?'},
+  ],
+  'nonfiction:chapter': [
+    {key:'argument',  label:'Core Argument',    type:'text',     ph:'The central claim of this chapter'},
+    {key:'keypoints', label:'Key Points',       type:'textarea', ph:'Main points to cover (one per line)'},
+    {key:'evidence',  label:'Evidence Needed',  type:'textarea', ph:'What supports the argument?'},
+    {key:'wordcount', label:'Word Count Target',type:'number',   ph:'e.g. 5000'},
+    {key:'status',    label:'Status',           type:'select',   opts:['Outline','Draft','Revised','Final']},
+  ],
+  'nonfiction:argument': [
+    {key:'claim',      label:'Claim',            type:'text',     ph:'The specific point being made'},
+    {key:'evidence',   label:'Evidence',         type:'textarea', ph:'What supports this?'},
+    {key:'counterarg', label:'Counter-argument', type:'text',     ph:'What might challenge this?'},
+    {key:'rebuttal',   label:'Rebuttal',         type:'text',     ph:'How do you respond?'},
+  ],
+  'nonfiction:key_point': [
+    {key:'takeaway', label:'Takeaway',  type:'text', ph:'The one thing readers should remember'},
+    {key:'example',  label:'Example',  type:'text', ph:'A concrete example or anecdote'},
+  ],
+  'research:hypothesis': [
+    {key:'question',  label:'Research Question',  type:'text',     ph:'The core question being investigated'},
+    {key:'variables', label:'Variables',           type:'text',     ph:'Independent / dependent variables'},
+    {key:'expected',  label:'Expected Outcome',   type:'text',     ph:'What do you predict?'},
+    {key:'null_hyp',  label:'Null Hypothesis',    type:'text',     ph:'H₀ statement'},
+  ],
+  'research:methodology': [
+    {key:'method',    label:'Method Type', type:'select', opts:['Qualitative','Quantitative','Mixed Methods','Experimental','Survey','Case Study','Ethnographic','Meta-Analysis','Computational']},
+    {key:'sample',    label:'Sample / Scope',      type:'text', ph:'Who or what is studied?'},
+    {key:'tools',     label:'Tools / Instruments', type:'text', ph:'e.g. Surveys, interviews, R, Python'},
+    {key:'timeline',  label:'Timeline',            type:'text', ph:'e.g. 3 months, Q1–Q3 2025'},
+    {key:'limitations',label:'Known Limitations',  type:'text', ph:'Constraints or caveats upfront'},
+  ],
+  'research:finding': [
+    {key:'data',         label:'Key Data / Result', type:'textarea', ph:'The evidence or result'},
+    {key:'significance', label:'Significance',      type:'text',     ph:'Why does this matter?'},
+    {key:'limitations',  label:'Limitations',       type:'text',     ph:'Any caveats or confounds?'},
+    {key:'next_steps',   label:'Next Steps',        type:'text',     ph:'What follow-up is needed?'},
+  ],
+  'research:lit_review': [
+    {key:'authors',    label:'Authors / Source', type:'text',     ph:'Who wrote it?'},
+    {key:'year',       label:'Year',             type:'text',     ph:'Publication year'},
+    {key:'relevance',  label:'Relevance',        type:'textarea', ph:'How does it relate to your research?'},
+    {key:'gap',        label:'Gap Identified',   type:'text',     ph:'What does it leave unanswered?'},
+  ],
+  'research:analysis': [
+    {key:'method',      label:'Analysis Method', type:'text', ph:'Statistical test, framework, etc.'},
+    {key:'data_source', label:'Data Source',     type:'text', ph:'Where does the data come from?'},
+    {key:'result',      label:'Result',          type:'text', ph:'What did the analysis show?'},
+  ],
+};
+
+function getMetaFields(n) {
+  const key = (board?.type||'') + ':' + (n.node_type||'');
+  return META_FIELDS[key] || [];
+}
+
+function parseMeta(n) {
+  try { return JSON.parse(n.metadata||'{}'); } catch { return {}; }
+}
+
+// ── EDIT MODAL ────────────────────────────────────────────────
+function openEdit(id){
+  closeCtx(); editId=id;
+  const n=nodes.find(x=>x.id===id);
+  const def=NODE_DEFS[n.node_type]||NODE_DEFS.idea;
+  document.getElementById('edit-modal-title').textContent=`Edit ${def.label}`;
+  document.getElementById('e-title').value=n.title;
+  document.getElementById('e-desc').value=n.description;
+  const colorRow=document.getElementById('e-color-row');
+  if(def.showColor){
+    colorRow.style.display='block';
+    document.getElementById('e-colors').innerHTML=COLORS.map(c=>`<div class="cdot ${c===n.color?'sel':''}" style="background:${c}" data-c="${c}" onclick="pickColor('${c}')"></div>`).join('');
+  } else { colorRow.style.display='none'; }
+  // Extra meta fields
+  const fields = getMetaFields(n);
+  const meta = parseMeta(n);
+  const extraEl = document.getElementById('e-extra');
+  if (fields.length) {
+    extraEl.innerHTML = fields.map(f => {
+      const val = meta[f.key]||'';
+      const id = 'ef-'+f.key;
+      let input;
+      if (f.type==='textarea') {
+        input = `<textarea id="${id}" class="inp" placeholder="${esc(f.ph||'')}" style="margin-bottom:10px;min-height:56px">${esc(val)}</textarea>`;
+      } else if (f.type==='select') {
+        const opts = f.opts.map(o=>`<option value="${esc(o)}" ${val===o?'selected':''}>${esc(o)}</option>`).join('');
+        input = `<select id="${id}" class="inp" style="margin-bottom:10px">${opts}</select>`;
+      } else {
+        input = `<input id="${id}" class="inp" type="${f.type}" placeholder="${esc(f.ph||'')}" value="${esc(val)}" style="margin-bottom:10px">`;
+      }
+      return `<label class="lbl">${esc(f.label)}</label>${input}`;
+    }).join('');
+  } else {
+    extraEl.innerHTML = '';
+  }
+  document.getElementById('edit-overlay').classList.add('show');
+  setTimeout(()=>document.getElementById('e-title').focus(),50);
+}
+function closeEdit(){ document.getElementById('edit-overlay').classList.remove('show'); editId=null; }
+function pickColor(c){ document.querySelectorAll('#e-colors .cdot').forEach(d=>d.classList.toggle('sel',d.dataset.c===c)); }
+async function saveEdit(){
+  const n=nodes.find(x=>x.id===editId);
+  const title=document.getElementById('e-title').value.trim()||'Untitled';
+  const description=document.getElementById('e-desc').value.trim();
+  const color=document.querySelector('#e-colors .cdot.sel')?.dataset.c;
+  const body={title,description};
+  if(color) body.color=color;
+  // Collect meta fields
+  const fields = getMetaFields(n);
+  if (fields.length) {
+    const meta = parseMeta(n);
+    fields.forEach(f => {
+      const el = document.getElementById('ef-'+f.key);
+      if (el) meta[f.key] = el.value.trim();
+    });
+    body.metadata = meta;
+  }
+  const res=await fetch('/api/brainstorm/nodes/'+editId,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const updated=await res.json();
+  const idx=nodes.findIndex(x=>x.id===editId);
+  if(idx!==-1) nodes[idx]=updated;
+  closeEdit(); refreshNode(updated);
+}
+document.getElementById('e-title').addEventListener('keydown',e=>{if(e.key==='Enter')saveEdit();if(e.key==='Escape')closeEdit();});
+document.getElementById('edge-label-inp').addEventListener('keydown',e=>{if(e.key==='Enter')saveEdgeLabel();if(e.key==='Escape')closeEdgeLabel();});
+
+// ── CONVERT MODAL ─────────────────────────────────────────────
+function openConv(id){ closeCtx(); convId=id; convProjData=null;
+  document.getElementById('conv-type').value='epic';
+  const sel=document.getElementById('conv-proj');
+  sel.innerHTML=projects.length?projects.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join(''):'<option value="">No projects yet</option>';
+  document.getElementById('conv-epic-row').style.display='none';
+  document.getElementById('conv-story-row').style.display='none';
+  document.getElementById('conv-overlay').classList.add('show');
+  if(projects.length) onConvProjChange();
+}
+function closeConv(){ document.getElementById('conv-overlay').classList.remove('show'); convId=null; }
+function onConvTypeChange(){
+  const t=document.getElementById('conv-type').value;
+  document.getElementById('conv-epic-row').style.display=(t==='story'||t==='task')?'block':'none';
+  document.getElementById('conv-story-row').style.display=t==='task'?'block':'none';
+  if((t==='story'||t==='task')&&convProjData) populateConvEpics();
+}
+async function onConvProjChange(){
+  const pid=document.getElementById('conv-proj').value; if(!pid) return;
+  const res=await fetch('/api/data?project='+pid); convProjData=await res.json();
+  const t=document.getElementById('conv-type').value;
+  if(t==='story'||t==='task') populateConvEpics();
+}
+function populateConvEpics(){
+  const epics=convProjData?.epics||[];
+  document.getElementById('conv-epic').innerHTML=epics.length?epics.map(e=>`<option value="${e.id}">${esc(e.title)}</option>`).join(''):'<option value="">No epics</option>';
+  if(document.getElementById('conv-type').value==='task') onConvEpicChange();
+}
+function onConvEpicChange(){
+  const eid=document.getElementById('conv-epic').value;
+  const epic=(convProjData?.epics||[]).find(e=>e.id===eid);
+  const stories=epic?.stories||[];
+  document.getElementById('conv-story').innerHTML=stories.length?stories.map(s=>`<option value="${s.id}">${esc(s.title)}</option>`).join(''):'<option value="">No stories</option>';
+}
+async function doConvert(){
+  const type=document.getElementById('conv-type').value;
+  const project_id=document.getElementById('conv-proj').value;
+  const epic_id=document.getElementById('conv-epic').value;
+  const story_id=document.getElementById('conv-story').value;
+  if(!project_id) return;
+  const body={type,project_id};
+  if(type==='story'||type==='task') body.epic_id=epic_id;
+  if(type==='task') body.story_id=story_id;
+  const res=await fetch(`/api/brainstorm/nodes/${convId}/convert`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(res.ok){
+    const data=await res.json();
+    const n=nodes.find(x=>x.id===convId);
+    closeConv();
+    alert(`"${n?.title}" added as a ${data.type}.`);
+  } else { const err=await res.json(); alert('Error: '+err.error); }
+}
+
+// ── FIT VIEW ──────────────────────────────────────────────────
+function fitView(){
+  if(!nodes.length) return;
+  const r=wrap.getBoundingClientRect();
+  const xs=nodes.map(n=>n.x), ys=nodes.map(n=>n.y);
+  const minX=Math.min(...xs),maxX=Math.max(...xs)+200,minY=Math.min(...ys),maxY=Math.max(...ys)+80;
+  pan={x:r.width/2-(minX+maxX)/2, y:r.height/2-(minY+maxY)/2};
+  nodes.forEach(n=>{const el=document.getElementById('nd-'+n.id);if(el)posEl(el,n);}); renderEdges();
+}
+
+// ── EMPTY ─────────────────────────────────────────────────────
+function updateEmpty(){
+  empty.style.display=board&&!nodes.length?'flex':'none';
+  if(board&&board.type==='problem'&&!nodes.length){
+    document.getElementById('empty-title').textContent='Start with a Problem node';
+    document.getElementById('empty-sub').textContent='Click "Problem" in the toolbar or double-click the canvas';
+  } else {
+    document.getElementById('empty-title').textContent='Empty board';
+    document.getElementById('empty-sub').textContent='Double-click the canvas or use the toolbar';
+  }
+}
+
+// ── KEYBOARD ──────────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeEdit();closeConv();closeEdgeLabel();closeCtx();if(connecting)cancelConnect();}
+});
+document.getElementById('nb-name').addEventListener('keydown',e=>{if(e.key==='Enter')createBoard();if(e.key==='Escape')closeNewBoard();});
+
+// ── EXPORT TO PROJECT ─────────────────────────────────────────
+function openExportProject() {
+  if (!board) return;
+  document.getElementById('export-name').value = board.name;
+  const descs = {
+    fiction:    'Chapters → Epics · Scenes, plot points, characters → Stories',
+    nonfiction: 'Chapters → Epics · Sections, arguments, key points → Stories',
+    research:   'Hypothesis, methodology → Epics · Findings, analysis, lit reviews → Stories',
+  };
+  document.getElementById('export-desc').textContent = descs[board.type] || '';
+  document.getElementById('export-overlay').classList.add('show');
+  setTimeout(()=>document.getElementById('export-name').focus(),50);
+}
+function closeExportProject() { document.getElementById('export-overlay').classList.remove('show'); }
+async function doExportProject() {
+  const name = document.getElementById('export-name').value.trim() || board.name;
+  const res = await fetch('/api/brainstorm/boards/'+board.id+'/export-project', {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name})
+  });
+  if (res.ok) {
+    const data = await res.json();
+    closeExportProject();
+    // flash success in toolbar
+    const btn = document.querySelector('[onclick="openExportProject()"]');
+    if (btn) { const orig=btn.textContent; btn.textContent='✓ Created!'; btn.style.color='#34d399'; setTimeout(()=>{btn.textContent=orig;btn.style.color='';},2500); }
+  } else {
+    const err = await res.json();
+    alert('Export failed: '+(err.error||'unknown error'));
+  }
+}
+
+// ── HELPERS ───────────────────────────────────────────────────
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+init();
+</script>
+</body>
+</html>
