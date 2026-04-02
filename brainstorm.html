@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Brittany</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -184,6 +185,179 @@ select.inp option{background:#1e2530}
 .type-card{border:1.5px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px;cursor:pointer;transition:all .15s;text-align:left}
 .type-card:hover{border-color:rgba(255,255,255,0.18);background:rgba(255,255,255,0.04)}
 .type-card.sel{border-color:rgba(245,158,11,0.5);background:rgba(245,158,11,0.08)}
+
+/* ── BEAT NODE ENHANCEMENTS ── */
+.node-beat{width:240px}
+.node-beat .beat-hint{color:#445566;line-height:1.5}
+.node-beat .beat-notes{color:#94a3b8;font-style:normal;font-size:11px;margin-top:5px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.05)}
+.beat-kq{margin-top:8px;padding-top:7px;border-top:1px solid rgba(255,255,255,0.04)}
+.beat-kq-item{font-size:9.5px;color:#3d4f64;line-height:1.5;padding:2px 0 2px 13px;position:relative}
+.beat-kq-item::before{content:'?';position:absolute;left:0;color:#6366f1;font-size:9px;font-weight:700}
+
+/* ── BEAT GUIDE MODAL ── */
+.guide-act-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px}
+.guide-section{margin-bottom:16px}
+.guide-section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#475569;margin-bottom:7px}
+.guide-desc{font-size:12.5px;color:#94a3b8;line-height:1.65}
+.guide-q-list{list-style:none;padding:0;margin:0}
+.guide-q-list li{font-size:12px;color:#64748b;line-height:1.55;padding:4px 0 4px 18px;position:relative;border-bottom:1px solid rgba(255,255,255,0.03)}
+.guide-q-list li:last-child{border-bottom:none}
+.guide-q-list li::before{content:'?';position:absolute;left:1px;color:#6366f1;font-weight:700;font-size:11px}
+.guide-tip{font-size:12px;color:#64748b;line-height:1.6;font-style:italic}
+.guide-examples{font-size:12px;color:#64748b;line-height:1.6}
+
+/* ── CHAPTER SKELETON ── */
+.doc-view-tab{padding:5px 12px;font-size:11.5px;font-weight:500;color:#475569;cursor:pointer;border-radius:6px;border:1px solid transparent;transition:all .13s;white-space:nowrap}
+.doc-view-tab:hover{color:#94a3b8;background:rgba(255,255,255,0.05)}
+.doc-view-tab.active{background:rgba(99,102,241,0.16);border-color:rgba(99,102,241,0.35);color:#a5b4fc}
+.chap-section{margin-bottom:24px;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.07);background:#161b22}
+.chap-section-header{display:flex;align-items:center;gap:12px;padding:13px 18px;border-bottom:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02)}
+.chap-num-badge{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.chap-title-text{font-size:14px;font-weight:600;color:#e2e8f0;flex:1}
+.chap-meta{font-size:11px;color:#334155}
+.chap-beat-pills{display:flex;flex-wrap:wrap;gap:5px;padding:10px 18px;border-bottom:1px solid rgba(255,255,255,0.04)}
+.chap-beat-pill{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:12px;font-size:10.5px;font-weight:600;border:1px solid}
+.chap-beat-section{padding:12px 18px 14px;border-bottom:1px solid rgba(255,255,255,0.04)}
+.chap-beat-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px}
+.chap-beat-notes{font-size:12px;color:#475569;line-height:1.55;margin-bottom:8px;font-style:italic}
+.chap-draft-editor{min-height:100px;padding:12px 14px;font-size:15px;line-height:1.8;color:#c8d6e5;outline:none;font-family:Georgia,'Times New Roman',serif;caret-color:#a5b4fc;word-break:break-word;border-radius:8px;border:1px solid rgba(255,255,255,0.07);background:rgba(0,0,0,0.2);margin-top:4px;transition:border-color .14s}
+.chap-draft-editor:empty::before{content:attr(data-placeholder);color:#2a3547;pointer-events:none}
+.chap-draft-editor:focus{border-color:rgba(99,102,241,0.35);background:rgba(99,102,241,0.02)}
+.chap-wc{font-size:11px;color:#2a3547;margin-top:4px;font-variant-numeric:tabular-nums}
+.chap-unplaced{background:rgba(255,255,255,0.02);border:1px dashed rgba(255,255,255,0.08);border-radius:10px;padding:14px 18px;margin-bottom:14px}
+
+/* ── DOCUMENT VIEW ── */
+#doc-view-overlay{position:fixed;inset:0;background:#0d1117;z-index:800;display:none;flex-direction:column}
+#doc-view-overlay.show{display:flex}
+#doc-tb{flex-shrink:0;height:52px;background:#0d1117;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;gap:10px;padding:0 20px}
+#doc-body-wrap{flex:1;overflow-y:auto;background:#111827}
+#doc-body{max-width:800px;margin:0 auto;padding:44px 36px 100px}
+.doc-title{font-size:30px;font-weight:700;color:#e2e8f0;margin-bottom:6px;outline:none;border:none;background:transparent;width:100%;font-family:Georgia,'Times New Roman',serif;caret-color:#a5b4fc}
+.doc-header-meta{font-size:12px;color:#334155;margin-bottom:44px}
+.doc-act-divider{display:flex;align-items:center;gap:12px;margin:36px 0 20px}
+.doc-act-divider-line{flex:1;height:1px;background:rgba(255,255,255,0.06)}
+.doc-act-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;padding:3px 12px;border-radius:20px}
+.doc-section{margin-bottom:28px;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.07);background:#161b22}
+.doc-beat-header{display:flex;align-items:center;justify-content:space-between;padding:13px 16px}
+.doc-beat-meta{display:flex;align-items:center;gap:11px}
+.doc-beat-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#0d1117;flex-shrink:0}
+.doc-beat-name{font-size:13.5px;font-weight:600;color:#e2e8f0}
+.doc-beat-sub{font-size:10.5px;color:#475569;margin-top:1px}
+.doc-guide-btn{display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:6px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:#475569;cursor:pointer;font-size:11px;font-weight:500;transition:all .13s;font-family:inherit;white-space:nowrap}
+.doc-guide-btn:hover{background:rgba(255,255,255,0.07);color:#64748b}
+.doc-guide-btn.active{background:rgba(99,102,241,0.14);border-color:rgba(99,102,241,0.35);color:#818cf8}
+.doc-guide-btn svg{width:11px;height:11px;flex-shrink:0}
+.doc-guidance{padding:14px 16px 16px;background:rgba(0,0,0,0.3);border-top:1px solid rgba(255,255,255,0.04);display:none}
+.doc-guidance.open{display:block}
+.doc-guidance-desc{font-size:12.5px;color:#7a8fa6;line-height:1.65;margin-bottom:14px}
+.doc-guidance-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.doc-guidance-col-heading{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#334155;margin-bottom:6px}
+.doc-guidance-list{list-style:none;padding:0;margin:0}
+.doc-guidance-list li{font-size:11.5px;color:#445566;line-height:1.55;padding:3px 0 3px 16px;position:relative}
+.doc-guidance-list li::before{content:'?';position:absolute;left:1px;color:#4f46e5;font-weight:700;font-size:10px}
+.doc-guidance-tip{font-size:11.5px;color:#3d4f64;line-height:1.6;font-style:italic;margin-top:4px}
+.doc-guidance-examples{font-size:11.5px;color:#3d4f64;line-height:1.6;margin-top:4px}
+.doc-editor-wrap{position:relative}
+.doc-editor{min-height:140px;padding:16px 18px 14px;font-size:15px;line-height:1.8;color:#c8d6e5;outline:none;font-family:Georgia,'Times New Roman',serif;caret-color:#a5b4fc;word-break:break-word}
+.doc-editor:empty::before{content:attr(data-placeholder);color:#2a3547;pointer-events:none}
+.doc-editor:focus{background:rgba(99,102,241,0.015)}
+.doc-section-footer{display:flex;align-items:center;justify-content:flex-end;padding:7px 16px;border-top:1px solid rgba(255,255,255,0.04);gap:16px}
+.doc-wc{font-size:11px;color:#2a3547;font-variant-numeric:tabular-nums}
+.doc-total-wc{font-size:12px;color:#475569;font-variant-numeric:tabular-nums}
+.doc-scene-panel{margin-top:10px;padding:10px 18px 14px;border-top:1px solid rgba(255,255,255,0.04)}
+.doc-scene-panel-title{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#2a3547;margin-bottom:8px}
+.doc-scene-item{display:flex;align-items:baseline;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.03)}
+.doc-scene-item:last-child{border-bottom:none}
+.doc-scene-num{font-size:9.5px;color:#2a3547;flex-shrink:0;width:16px;text-align:right}
+.doc-scene-title{font-size:12px;color:#445566;flex:1}
+.doc-scene-words{font-size:10.5px;color:#2a3547;flex-shrink:0}
+
+/* ── BEAT EDIT MODAL ── */
+#beat-edit-overlay .mbox{max-width:640px;padding:0;overflow:hidden;display:flex;flex-direction:column;max-height:92vh}
+.be-header{padding:16px 20px 0;flex-shrink:0}
+.be-tabs{display:flex;gap:0;border-bottom:1px solid rgba(255,255,255,0.08);padding:0 20px;flex-shrink:0;margin-top:14px}
+.be-tab{padding:8px 14px;font-size:11.5px;font-weight:500;color:#475569;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .13s,border-color .13s;white-space:nowrap}
+.be-tab:hover{color:#94a3b8}
+.be-tab.active{color:#a5b4fc;border-bottom-color:#a5b4fc}
+.be-body{flex:1;overflow-y:auto;padding:18px 20px 20px}
+.be-panel{display:none}
+.be-panel.active{display:block}
+.be-footer{padding:12px 20px;border-top:1px solid rgba(255,255,255,0.07);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0;background:#161b22}
+.be-section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#334155;margin:14px 0 8px;padding-top:14px;border-top:1px solid rgba(255,255,255,0.05)}
+.be-section-title:first-child{margin-top:0;padding-top:0;border-top:none}
+.be-hint-box{background:rgba(99,102,241,0.07);border:1px solid rgba(99,102,241,0.18);border-radius:8px;padding:10px 12px;margin-bottom:14px}
+.be-hint-text{font-size:11.5px;color:#64748b;line-height:1.6;font-style:italic}
+.be-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.be-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px}
+.be-full{margin-bottom:10px}
+/* character chips */
+.chip-wrap{display:flex;flex-wrap:wrap;gap:5px;align-items:center;min-height:34px;padding:5px 8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:8px;cursor:text}
+.chip-wrap:focus-within{border-color:rgba(129,140,248,0.55)}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:2px 8px 2px 9px;border-radius:20px;background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.35);color:#a5b4fc;font-size:11px;font-weight:500}
+.chip-x{background:none;border:none;cursor:pointer;color:#6366f1;font-size:12px;padding:0;line-height:1;opacity:.7}
+.chip-x:hover{opacity:1}
+.chip-input{border:none;outline:none;background:transparent;color:#e2e8f0;font-size:12px;font-family:inherit;min-width:80px;flex:1}
+/* scene builder */
+.scene-list{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.scene-row{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;overflow:hidden}
+.scene-row-head{display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer}
+.scene-row-head:hover{background:rgba(255,255,255,0.03)}
+.scene-drag{color:#2a3547;font-size:12px;cursor:grab;flex-shrink:0}
+.scene-row-title{flex:1;font-size:12px;color:#94a3b8;font-weight:500}
+.scene-row-words{font-size:11px;color:#334155;flex-shrink:0}
+.scene-row-del{background:none;border:none;cursor:pointer;color:#334155;font-size:12px;padding:2px 4px;border-radius:4px;transition:color .12s}
+.scene-row-del:hover{color:#f87171}
+.scene-expand{padding:0 10px 10px;display:none}
+.scene-expand.open{display:block}
+.scene-expand-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.scene-expand-full{margin-top:8px}
+.add-scene-btn{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:7px;border:1px dashed rgba(255,255,255,0.12);background:none;color:#334155;cursor:pointer;font-size:11.5px;font-family:inherit;transition:all .13s;width:100%}
+.add-scene-btn:hover{border-color:rgba(99,102,241,0.4);color:#6366f1;background:rgba(99,102,241,0.06)}
+/* wc target hint */
+.wc-hint{font-size:10.5px;color:#2a3547;margin-top:3px}
+
+/* ── NOVEL PLANNER ── */
+#planner-overlay{position:fixed;inset:0;background:#0d1117;z-index:800;display:none;flex-direction:column}
+#planner-overlay.show{display:flex}
+#planner-tb{flex-shrink:0;height:52px;background:#0d1117;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;gap:10px;padding:0 20px}
+#planner-body-wrap{flex:1;overflow-y:auto;background:#0d1117}
+#planner-body{max-width:960px;margin:0 auto;padding:32px 28px 80px}
+.planner-title{font-size:22px;font-weight:700;color:#e2e8f0;margin-bottom:4px}
+.planner-meta{font-size:12px;color:#334155;margin-bottom:28px}
+.planner-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:32px}
+.planner-stat{background:#161b22;border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px 16px}
+.planner-stat-val{font-size:22px;font-weight:700;color:#e2e8f0;font-variant-numeric:tabular-nums}
+.planner-stat-label{font-size:10.5px;color:#334155;margin-top:3px;text-transform:uppercase;letter-spacing:.05em}
+.planner-act{margin-bottom:28px}
+.planner-act-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.planner-act-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;padding:3px 12px;border-radius:20px}
+.planner-act-line{flex:1;height:1px;background:rgba(255,255,255,0.06)}
+.planner-beat-row{background:#161b22;border:1px solid rgba(255,255,255,0.06);border-radius:9px;margin-bottom:6px;overflow:hidden;transition:border-color .13s}
+.planner-beat-row:hover{border-color:rgba(255,255,255,0.12)}
+.planner-beat-head{display:grid;grid-template-columns:28px 1fr 100px 110px 90px;align-items:center;gap:12px;padding:11px 14px;cursor:pointer}
+.planner-beat-num{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#0d1117;flex-shrink:0}
+.planner-beat-name{font-size:12.5px;font-weight:600;color:#e2e8f0}
+.planner-beat-pct{font-size:10.5px;color:#334155;margin-top:1px}
+.planner-beat-chapters{font-size:11.5px;color:#64748b}
+.planner-beat-wc{font-size:11px;font-variant-numeric:tabular-nums}
+.planner-wc-bar{height:4px;border-radius:2px;background:rgba(255,255,255,0.07);margin-top:5px;overflow:hidden}
+.planner-wc-fill{height:100%;border-radius:2px;transition:width .3s}
+.planner-beat-scenes{font-size:11px;color:#334155}
+.planner-beat-detail{padding:0 14px 14px;display:none;border-top:1px solid rgba(255,255,255,0.05)}
+.planner-beat-detail.open{display:block}
+.planner-detail-chars{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;padding-top:10px}
+.planner-char-chip{padding:2px 9px;border-radius:20px;background:rgba(99,102,241,0.14);border:1px solid rgba(99,102,241,0.25);color:#818cf8;font-size:11px}
+.planner-scene-table{width:100%;border-collapse:collapse}
+.planner-scene-table th{font-size:9.5px;color:#334155;text-transform:uppercase;letter-spacing:.06em;font-weight:600;padding:4px 8px;border-bottom:1px solid rgba(255,255,255,0.06);text-align:left}
+.planner-scene-table td{font-size:11.5px;color:#64748b;padding:7px 8px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:top}
+.planner-scene-table tr:last-child td{border-bottom:none}
+.planner-notes{font-size:12px;color:#3d4f64;font-style:italic;margin-top:8px}
+.planner-edit-btn{display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border-radius:6px;border:1px solid rgba(255,255,255,0.08);background:none;color:#475569;cursor:pointer;font-size:11px;font-family:inherit;transition:all .13s;margin-top:8px}
+.planner-edit-btn:hover{background:rgba(255,255,255,0.06);color:#94a3b8}
+/* board settings modal */
+#board-settings-overlay .mbox{max-width:380px}
+/* beat edit needs to sit above the doc/planner overlays (z-index 800) */
+#beat-edit-overlay{z-index:850}
 </style>
 </head>
 <body>
@@ -275,6 +449,187 @@ select.inp option{background:#1e2530}
 
 <!-- CONTEXT MENU -->
 <div class="ctx-menu" id="ctx"></div>
+
+<!-- BEAT EDIT MODAL (replaces generic edit for beat nodes) -->
+<div class="overlay" id="beat-edit-overlay">
+  <div class="mbox">
+    <div class="be-header">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div id="be-num-circle" style="width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#0d1117;flex-shrink:0"></div>
+        <div style="flex:1">
+          <div id="be-beat-name" style="font-size:14px;font-weight:700;color:#e2e8f0"></div>
+          <div id="be-beat-sub" style="font-size:10.5px;color:#475569;margin-top:2px"></div>
+        </div>
+        <button onclick="closeBeatEdit()" style="background:none;border:none;cursor:pointer;color:#475569;font-size:16px;padding:2px 4px">✕</button>
+      </div>
+    </div>
+    <div class="be-tabs">
+      <div class="be-tab active" onclick="switchBeTab('story',this)">Story</div>
+      <div class="be-tab" onclick="switchBeTab('novel',this)">Novel Structure</div>
+      <div class="be-tab" onclick="switchBeTab('scenes',this)">Scenes</div>
+      <div class="be-tab" onclick="switchBeTab('characters',this)">Characters</div>
+    </div>
+    <div class="be-body">
+      <!-- STORY TAB -->
+      <div class="be-panel active" id="be-panel-story">
+        <div class="be-hint-box" id="be-hint-box"></div>
+        <label class="lbl">Story Notes <span style="color:#2a3547;font-style:italic;font-weight:400">— brief planning summary</span></label>
+        <textarea id="be-story-notes" class="inp" style="min-height:80px;margin-bottom:12px" placeholder="Describe the events, decisions, and emotional shifts that happen here…" spellcheck="true"></textarea>
+        <div class="be-section-title">Draft Content</div>
+        <div style="font-size:11px;color:#475569;margin-bottom:7px;line-height:1.5">Long-form prose, detailed scene notes, or full draft text for this beat. This becomes the body of the Chapter Skeleton.</div>
+        <textarea id="be-draft-content" class="inp" style="min-height:180px;font-size:13.5px;line-height:1.75;font-family:Georgia,'Times New Roman',serif;margin-bottom:0" placeholder="Write detailed prose, dialogue, or scene-by-scene notes for this beat…" spellcheck="true"></textarea>
+      </div>
+      <!-- NOVEL STRUCTURE TAB -->
+      <div class="be-panel" id="be-panel-novel">
+        <div class="be-section-title">Placement</div>
+        <div class="be-full">
+          <label class="lbl">Chapter Title <span style="color:#2a3547;font-style:italic;font-weight:400">— name for this chapter in the book skeleton</span></label>
+          <input id="be-chapter-title" class="inp" type="text" placeholder="e.g. 'The Point of No Return'" style="margin-bottom:10px">
+        </div>
+        <div class="be-row">
+          <div>
+            <label class="lbl">Chapter Number(s)</label>
+            <input id="be-chapters" class="inp" type="text" placeholder="e.g. 3, or 3–5">
+          </div>
+          <div>
+            <label class="lbl">POV Character</label>
+            <input id="be-pov" class="inp" type="text" placeholder="Whose perspective?">
+          </div>
+        </div>
+        <div class="be-full">
+          <label class="lbl">Location / Setting</label>
+          <input id="be-location" class="inp" type="text" placeholder="Where does this beat take place?">
+        </div>
+        <div class="be-section-title">Word Count</div>
+        <div class="be-row">
+          <div>
+            <label class="lbl">Target Words</label>
+            <input id="be-target-words" class="inp" type="number" placeholder="e.g. 3000" min="0">
+            <div class="wc-hint" id="be-wc-suggestion"></div>
+          </div>
+          <div>
+            <label class="lbl">Subplot Notes</label>
+            <input id="be-subplot" class="inp" type="text" placeholder="B/C story elements here?">
+          </div>
+        </div>
+      </div>
+      <!-- SCENES TAB -->
+      <div class="be-panel" id="be-panel-scenes">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <span style="font-size:11px;color:#334155">Scenes that make up this beat, in order.</span>
+          <span id="be-scene-wc-total" style="font-size:11px;color:#334155;font-variant-numeric:tabular-nums"></span>
+        </div>
+        <div class="scene-list" id="be-scene-list"></div>
+        <button class="add-scene-btn" onclick="beAddScene()">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:12px;height:12px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Add Scene
+        </button>
+      </div>
+      <!-- CHARACTERS TAB -->
+      <div class="be-panel" id="be-panel-characters">
+        <label class="lbl" style="margin-bottom:6px">Characters in this beat <span style="color:#2a3547;font-style:italic;font-weight:400">— type a name and press Enter</span></label>
+        <div class="chip-wrap" id="be-char-wrap" onclick="document.getElementById('be-char-input').focus()">
+          <input id="be-char-input" class="chip-input" type="text" placeholder="Add character…">
+        </div>
+        <div class="be-section-title" style="margin-top:14px">Additional Notes</div>
+        <textarea id="be-char-notes" class="inp" style="min-height:80px" placeholder="Character goals, conflicts, arc moments at this beat…"></textarea>
+      </div>
+    </div>
+    <div class="be-footer">
+      <button class="tb-btn" onclick="closeBeatEdit()">Cancel</button>
+      <button class="tb-btn" onclick="saveBeatEdit()" style="background:rgba(99,102,241,0.18);border-color:rgba(99,102,241,0.4);color:#a5b4fc">Save Beat</button>
+    </div>
+  </div>
+</div>
+
+<!-- BOARD SETTINGS MODAL -->
+<div class="overlay" id="board-settings-overlay">
+  <div class="mbox" style="max-width:380px">
+    <p style="font-size:13px;font-weight:600;color:#e2e8f0;margin-bottom:4px">Novel Settings</p>
+    <p style="font-size:11.5px;color:#475569;margin-bottom:16px">These settings apply to the whole board.</p>
+    <label class="lbl">Total Word Count Target</label>
+    <input id="bs-total-words" class="inp" type="number" min="10000" max="500000" placeholder="e.g. 90000" style="margin-bottom:6px">
+    <div style="font-size:10.5px;color:#334155;margin-bottom:16px">Typical novels: 70,000–100,000 · Novella: 20,000–50,000</div>
+    <label class="lbl">Working Title</label>
+    <input id="bs-board-name" class="inp" type="text" style="margin-bottom:16px" placeholder="Your novel's working title">
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="tb-btn" onclick="closeBoardSettings()">Cancel</button>
+      <button class="tb-btn" onclick="saveBoardSettings()" style="background:rgba(99,102,241,0.18);border-color:rgba(99,102,241,0.4);color:#a5b4fc">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOVEL PLANNER OVERLAY -->
+<div id="planner-overlay">
+  <div id="planner-tb">
+    <button class="tb-btn" onclick="closePlanner()" style="flex-shrink:0">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:12px;height:12px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+      Board
+    </button>
+    <div class="tb-sep"></div>
+    <span style="font-size:12px;font-weight:600;color:#475569;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="planner-board-name"></span>
+    <button class="tb-btn" onclick="openBoardSettings()" style="flex-shrink:0">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:12px;height:12px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+      Settings
+    </button>
+  </div>
+  <div id="planner-body-wrap">
+    <div id="planner-body"></div>
+  </div>
+</div>
+
+<!-- BEAT GUIDE MODAL -->
+<div class="overlay" id="beat-guide-overlay">
+  <div class="mbox" style="max-width:540px">
+    <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:16px">
+      <div id="bg-num-circle" style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#0d1117;flex-shrink:0"></div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span id="bg-name" style="font-size:15px;font-weight:700;color:#e2e8f0"></span>
+          <span id="bg-act-badge" class="guide-act-badge"></span>
+        </div>
+        <div id="bg-pct" style="font-size:11px;color:#475569;margin-top:3px"></div>
+      </div>
+      <button onclick="closeBeatGuide()" style="background:none;border:none;cursor:pointer;color:#475569;padding:2px;border-radius:4px;font-size:16px;line-height:1;flex-shrink:0">✕</button>
+    </div>
+    <div id="bg-body"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:14px">
+      <button class="tb-btn" onclick="closeBeatGuide()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- DOCUMENT VIEW OVERLAY -->
+<div id="doc-view-overlay">
+  <!-- Doc toolbar -->
+  <div id="doc-tb">
+    <button class="tb-btn" onclick="closeDocView()" style="flex-shrink:0">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:12px;height:12px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+      Board
+    </button>
+    <div class="tb-sep"></div>
+    <span style="font-size:12px;font-weight:600;color:#475569;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="doc-board-name"></span>
+    <div style="display:flex;gap:4px;margin:0 4px">
+      <button class="doc-view-tab active" id="doc-tab-beats" onclick="switchDocView('beats')">Beat View</button>
+      <button class="doc-view-tab" id="doc-tab-chapters" onclick="switchDocView('chapters')">Chapter Skeleton</button>
+    </div>
+    <div class="tb-sep"></div>
+    <span class="doc-total-wc" id="doc-total-wc">0 words</span>
+    <div class="tb-sep"></div>
+    <button class="tb-btn" id="doc-save-btn" onclick="saveDocContent()" style="color:#a5b4fc;border-color:rgba(99,102,241,0.35)">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:12px;height:12px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg>
+      Save
+    </button>
+    <button class="tb-btn" onclick="downloadDocx()" style="color:#34d399;border-color:rgba(16,185,129,0.35)">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:12px;height:12px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+      Download .docx
+    </button>
+  </div>
+  <!-- Doc body -->
+  <div id="doc-body-wrap">
+    <div id="doc-body"></div>
+  </div>
+</div>
 
 <!-- NEW BOARD MODAL -->
 <div class="overlay" id="new-board-overlay">
@@ -414,21 +769,126 @@ const BOARD_ICONS = { freeform:'💡', flowchart:'🔷', problem:'🎯', fiction
 const BOARD_LABELS= { freeform:'Freeform', flowchart:'Flowchart', problem:'Problem Solving', fiction:'Fiction', fiction_15beats:'Fiction · 15 Beats', nonfiction:'Nonfiction', research:'Research Paper' };
 
 const SAVE_THE_CAT_BEATS = [
-  { num:1,  name:'Opening Image',     pct:'0–1%',    act:1, hint:'Visual "before" snapshot of the hero — who they are and what their world looks like before transformation.' },
-  { num:2,  name:'Theme Stated',      pct:'5%',      act:1, hint:'A character (not the hero) hints at the life lesson the hero must learn by the end.' },
-  { num:3,  name:'Setup',             pct:'1–10%',   act:1, hint:'Explore the hero\'s flawed status quo, introduce supporting characters, hint at stakes, show reluctance to change.' },
-  { num:4,  name:'Catalyst',          pct:'10%',     act:1, hint:'A life-changing inciting incident — big enough that the hero can\'t return to their old life.' },
-  { num:5,  name:'Debate',            pct:'10–20%',  act:1, hint:'The hero debates what to do next. "Should I go?" Shows reluctance to change and enter Act 2.' },
-  { num:6,  name:'Break Into 2',      pct:'20%',     act:2, hint:'Hero accepts the call, leaves their comfort zone. Decisive action — old world ends, new upside-down world begins.' },
-  { num:7,  name:'B Story',           pct:'22%',     act:2, hint:'Introduce a helper character (love interest, mentor, nemesis) who will help the hero learn the theme.' },
-  { num:8,  name:'Fun and Games',     pct:'20–50%',  act:2, hint:'"Promise of the premise" — hero in their new world, pursuing the Act 2 goal. This is why the reader picked up the book.' },
-  { num:9,  name:'Midpoint',          pct:'50%',     act:2, hint:'False victory or false defeat. Stakes raised. Something happens to push the hero toward real change.' },
-  { num:10, name:'Bad Guys Close In', pct:'50–75%',  act:2, hint:'Things get worse (or deceptively better). Internal flaws closing in. New or modified goal post-Midpoint.' },
-  { num:11, name:'All Is Lost',       pct:'75%',     act:2, hint:'The hero\'s lowest point. Something dies (literally or metaphorically) — the death of the old hero.' },
-  { num:12, name:'Dark Night of Soul',pct:'75–80%',  act:2, hint:'Hero processes rock bottom. Darkest before dawn — right before the "aha" breakthrough moment.' },
-  { num:13, name:'Break Into 3',      pct:'80%',     act:3, hint:'"Aha!" moment — the hero knows what must be done to fix the external problem and transform internally.' },
-  { num:14, name:'Finale',            pct:'80–99%',  act:3, hint:'Hero proves they\'ve changed. Bad guys defeated, flaws conquered, lovers reunited. World saved and better.' },
-  { num:15, name:'Final Image',       pct:'99–100%', act:3, hint:'"After" snapshot — mirror to the Opening Image, showing the hero\'s completed transformation.' },
+  {
+    num:1, name:'Opening Image', pct:'0–1%', act:1,
+    hint:'Visual "before" snapshot of the hero — who they are and what their world looks like before transformation.',
+    description:'A single scene or image that captures the protagonist\'s world before anything changes. It establishes tone, genre, and mood while visually showing the hero\'s flawed "before" state. Everything here should contrast with Beat 15 (Final Image) to prove how much the hero has grown.',
+    keyQuestions:['What does the hero\'s daily world look like right now?','What single image captures who the hero is BEFORE change?','What tone and genre are you setting here?','What flaw or limitation is visible even in this opening moment?'],
+    tips:'Keep it to one focused scene. Make it concrete and visual. Avoid excessive backstory or info-dumps — show, don\'t tell.',
+    examples:'"Legally Blonde": Elle presides over her sorority world in designer pink. "The Hunger Games": Katniss wakes before dawn, hunting in poverty. "Up": Carl and Ellie as young adventurers full of dreams.'
+  },
+  {
+    num:2, name:'Theme Stated', pct:'5%', act:1,
+    hint:'A character (not the hero) hints at the life lesson the hero must learn by the end.',
+    description:'Someone — usually not the hero — articulates the central question or lesson of the story, often without the hero fully recognizing it yet. This is the thematic thesis stated out loud. The hero will spend the rest of the story wrestling with whether it\'s true.',
+    keyQuestions:['What is the one lesson your hero must learn by the end?','Who can plant this seed in a way the hero isn\'t ready to hear yet?','Is the theme a question, a challenge, or a piece of advice?','How does the hero react — do they dismiss or ignore it?'],
+    tips:'The theme should feel organic, not like a lecture. It often works best as advice the hero rejects — they\'ll only truly understand it after the full journey.',
+    examples:'"The Dark Knight": "Some men just want to watch the world burn." "About a Boy": "No man is an island." "Clueless": "You\'re a virgin who can\'t drive."'
+  },
+  {
+    num:3, name:'Setup', pct:'1–10%', act:1,
+    hint:'Explore the hero\'s flawed status quo — introduce key characters, hint at stakes, and show six things that need fixing.',
+    description:'The extended introduction of the hero\'s world before it changes. Meet the supporting cast, see the hero\'s flaws in action, understand the stakes, and begin to feel something is wrong — or could be better. The hero senses change is possible but resists it. Every element here should pay off later.',
+    keyQuestions:['What are the hero\'s six "things that need fixing" (flaws, habits, wounds)?','Who are the key supporting characters and what do they represent thematically?','What does the hero WANT (external) vs. what do they NEED (internal)?','What does the hero stand to lose if they don\'t change?','What world are we in, and what are its rules?'],
+    tips:'Plant seeds that bloom in Act 3. Every character introduced should matter. Show the hero as sympathetic despite their flaw. The hero should have a ghost — a wound from the past driving their behavior.',
+    examples:'"Bridesmaids": Annie\'s failing bakery, bad relationships, fading friendships. "The Matrix": Neo\'s double life — office drone by day, hacker by night. "Pride & Prejudice": The Bennet household under social pressure.'
+  },
+  {
+    num:4, name:'Catalyst', pct:'10%', act:1,
+    hint:'A life-changing inciting incident — big enough that the hero can\'t return to their old life.',
+    description:'Something happens that fundamentally disrupts the hero\'s world. This is the inciting incident — a door opens (or slams shut) that demands a response. It must be significant enough to force the hero to act and set the main plot in motion. The old equilibrium is shattered.',
+    keyQuestions:['What single event kicks the story into motion?','Why can\'t the hero simply ignore this and return to normal?','Does this come from outside (external event) or inside (realization/decision)?','How does this raise the story\'s central question?'],
+    tips:'The Catalyst should feel both surprising and inevitable in hindsight. It should be dramatic enough to justify the entire journey, and it directly causes the Debate.',
+    examples:'"The Hunger Games": Prim\'s name is drawn at the Reaping. "Die Hard": Terrorists seize Nakatomi Plaza. "Clueless": Cher decides to give Tai a makeover.'
+  },
+  {
+    num:5, name:'Debate', pct:'10–20%', act:1,
+    hint:'The hero debates whether to accept the call. Shows their fear and reluctance to leave the old world.',
+    description:'The hero wrestles with the Catalyst\'s implications. Should they accept the call or refuse? This section shows fear, uncertainty, and the cost of taking action. It\'s the last chance to see the hero\'s "before" state clearly. The Debate ends with a decisive choice that launches Act 2.',
+    keyQuestions:['What is the hero most afraid of about taking this step?','What would they lose by acting? What might they gain?','Does the hero try to solve the problem the "old way" first — and fail?','What finally tips the balance and forces them into Act 2?'],
+    tips:'The Debate often takes the form of a literal question: "Should I go? Can I do this?" Keep tension high — we must genuinely believe the hero might not take the leap.',
+    examples:'"Lord of the Rings": Frodo debates leaving the Shire with Gandalf. "Legally Blonde": Elle questions whether she can get into Harvard Law. "The Karate Kid": Daniel considers quitting after his first beating.'
+  },
+  {
+    num:6, name:'Break Into 2', pct:'20%', act:2,
+    hint:'Hero makes a decisive choice and enters the new upside-down world. The old world is left behind.',
+    description:'The hero makes an active, decisive choice that propels them into Act 2 — a new, upside-down world. This is not something that happens TO the hero; they must CHOOSE it. This signals the true start of the adventure. The Act 1 world is left behind permanently.',
+    keyQuestions:['What specific action does the hero take to enter the new world?','Is this an ACTIVE choice (not something forced on them)?','How is Act 2\'s world "upside down" compared to Act 1?','What is the hero\'s specific goal for Act 2?'],
+    tips:'The hero must drive this moment. If they\'re passively pushed into Act 2 with no real choice, it weakens the story. The action should feel bold, irreversible, and full of consequence.',
+    examples:'"The Hunger Games": Katniss volunteers as tribute. "Up": Carl\'s house lifts off the ground. "Legally Blonde": Elle enrolls at Harvard Law School.'
+  },
+  {
+    num:7, name:'B Story', pct:'22%', act:2,
+    hint:'Introduce the helper character — love interest, mentor, or ally — who carries the theme and helps the hero grow.',
+    description:'A new character (or one seen in a new light) enters who will help carry the theme. Often a love interest, mentor, or unlikely ally, the B Story character represents the lesson the hero needs to learn. The A Story is what happens externally; the B Story is why it matters internally.',
+    keyQuestions:['Who is the B Story character and how do they embody the theme?','How does this character challenge or expand the hero\'s worldview?','Is this a love interest, mentor, rival, or unlikely ally?','How does the B Story weave alongside and contrast with the A Story?'],
+    tips:'The B Story provides emotional depth and respite from the A Story\'s external conflict. The B Story character is a living embodiment of what the hero needs to become — they model the theme.',
+    examples:'"Legally Blonde": Elle meets Emmett, who genuinely believes in her potential. "The Karate Kid": Daniel and Mr. Miyagi begin their unlikely friendship. "Finding Nemo": Marlin and Dory — their bond IS the story.'
+  },
+  {
+    num:8, name:'Fun and Games', pct:'20–50%', act:2,
+    hint:'"Promise of the premise" — the hero explores the new world pursuing their goal. This is what the audience came for.',
+    description:'The longest and most enjoyable section to write. The hero is in the upside-down world, actively pursuing the Act 2 goal. This is the "promise of the premise" — if your concept is exciting, here is where it fully pays off. The hero isn\'t winning yet, but they\'re engaged, and the energy is high.',
+    keyQuestions:['What unique situations does your premise make possible? List them all.','How does the hero interact with and explore this new world?','What is the hero actively trying to accomplish (the Act 2 goal)?','What set-pieces or memorable scenes can only happen in this world?','What obstacles arise, and how does the hero attempt to overcome them?'],
+    tips:'Don\'t rush through this — it\'s the reason readers bought the book. Honor the premise. The hero should be active, not reactive. Think set-pieces, adventures, reversals, and moments of unexpected joy or horror.',
+    examples:'"Clueless": Cher\'s social engineering and matchmaking schemes. "Die Hard": John McClane picking off terrorists one by one. "The Hunger Games": Katniss navigating the arena, winning sponsors, and forming alliances.'
+  },
+  {
+    num:9, name:'Midpoint', pct:'50%', act:2,
+    hint:'False victory or false defeat at the exact midpoint. Stakes raise. Something forces the hero toward real change.',
+    description:'Exactly halfway through, something significant shifts the story\'s direction. Either a False Victory (things seem great, creating new pressure) or a False Defeat (things seem terrible, forcing the hero to dig deeper). Stakes are raised and the internal journey is accelerated.',
+    keyQuestions:['Is your Midpoint a False Victory or a False Defeat?','How does this moment raise the stakes significantly?','What does the hero gain or lose here that changes their trajectory?','How does this shift the conflict for the second half of Act 2?','Does something "tick up" (hero gets something they wanted, with consequences)?'],
+    tips:'The Midpoint is often a public moment — the hero\'s victory or defeat happens in front of others, raising social and emotional stakes. It must feel like a true pivot, not just another scene.',
+    examples:'"Legally Blonde": Elle wins her first moot court argument — a False Victory. "The Hunger Games": Two tributes can now win — False Victory for Katniss and Peeta. "Rocky": Rocky realizes he just wants to "go the distance."'
+  },
+  {
+    num:10, name:'Bad Guys Close In', pct:'50–75%', act:2,
+    hint:'External forces rally against the hero while internal doubts intensify. Team begins to fracture.',
+    description:'After the Midpoint, the world pushes back harder. The antagonist regroups and becomes more threatening. But crucially, the hero\'s own internal "bad guys" — doubts, flaws, fears — are also closing in. External pressure and internal disintegration build simultaneously toward All Is Lost.',
+    keyQuestions:['What external forces are rallying against the hero now?','What internal doubts or flaws are undermining the hero from within?','How is the hero\'s team, support system, or relationships weakening?','What specific moment triggers the spiral into All Is Lost?','How do external and internal pressures mirror each other?'],
+    tips:'The "bad guys" aren\'t only villains — they can be circumstances, society, addiction, or the hero\'s own psychology. The external and internal pressures should reflect each other thematically.',
+    examples:'"The Hunger Games": The Careers hunt Katniss; Peeta seemingly betrays her. "Bridesmaids": Annie\'s life implodes on every front simultaneously. "The Dark Knight": The Joker turns all of Gotham against Batman.'
+  },
+  {
+    num:11, name:'All Is Lost', pct:'75%', act:2,
+    hint:'The hero\'s absolute lowest point. Something dies — literally or metaphorically — forcing the deepest crisis.',
+    description:'The lowest point of the entire story. Everything the hero has worked for appears lost. Something dies here — a person, a relationship, a dream, a belief, the old self. This moment is the direct structural opposite of the story\'s resolution. The hero appears utterly and completely defeated.',
+    keyQuestions:['What is the worst possible thing that could happen to your hero at this moment?','What specifically "dies" — a character, relationship, dream, or worldview?','How is this the direct opposite of where the story will end?','Did the hero\'s own flaw contribute to or cause this moment?'],
+    tips:'The death (literal or metaphorical) is essential — something must actually be LOST, not merely threatened. The greater the loss, the more powerful the eventual victory. Make it truly devastating.',
+    examples:'"Finding Nemo": Nemo appears dead; Marlin abandons hope and starts home. "Toy Story 3": The toys face the incinerator together. "The Hunger Games": Rue dies; Katniss mourns publicly, defying the Capitol.'
+  },
+  {
+    num:12, name:'Dark Night of Soul', pct:'75–80%', act:2,
+    hint:'Hero sits with the loss. Darkest before dawn — processing rock bottom until the "aha" breakthrough begins to form.',
+    description:'The hero sits with the devastation of All Is Lost. They have hit rock bottom and must process what happened. This is not action — it\'s reflection, grief, and despair. But it\'s also the moment that seeds the breakthrough: somewhere in the darkness, the hero begins to see what they\'ve been missing. The theme\'s answer is forming.',
+    keyQuestions:['How does the hero respond to All Is Lost — what do they do, feel, think?','What old belief or behavior pattern does the hero finally begin to release?','Where does the "aha" seed get planted? (A memory, a conversation, an object?)','How does the theme\'s lesson emerge through the hero\'s reflection?'],
+    tips:'Don\'t rush this moment. The reader needs to feel the full depth of the loss before the triumph can resonate. The breakthrough must feel earned — not a magical fix.',
+    examples:'"Legally Blonde": Elle overhears people mocking her and nearly quits — then finds her strength. "Up": Carl opens Ellie\'s adventure book and finds her message to him. "Rocky": Rocky tells Adrian he just wants to go the distance — he doesn\'t need to win.'
+  },
+  {
+    num:13, name:'Break Into 3', pct:'80%', act:3,
+    hint:'"Aha!" moment — hero\'s transformation completes. They combine what they\'ve learned to forge a new plan.',
+    description:'The hero\'s internal transformation is complete. They have a breakthrough — they understand the theme and know what they need to do. This moment combines the A Story (external problem) and B Story (internal growth) into a unified solution. The hero acts from their new, transformed self.',
+    keyQuestions:['What is the hero\'s specific "aha" realization — what do they finally understand?','How does solving the internal problem reveal how to solve the external problem?','How are the A Story and B Story threads combined in this solution?','What decisive action does the hero choose to take?'],
+    tips:'The hero must be genuinely changed by this point. The solution to the external problem should emerge FROM the internal transformation — not in spite of it.',
+    examples:'"Legally Blonde": Elle realizes she IS a real lawyer and doesn\'t need Warner\'s validation. "Finding Nemo": Marlin lets go of fear and trusts Nemo\'s abilities. "Up": Carl chooses living adventure over preserving the house as a shrine.'
+  },
+  {
+    num:14, name:'Finale', pct:'80–99%', act:3,
+    hint:'Hero executes the plan, defeats antagonist through transformed self, rights wrongs, and leaves the world better.',
+    description:'The climax and resolution. The hero — now fully changed — confronts and defeats the antagonist, not by returning to old methods but through new wisdom. Every thread planted in Setup pays off here. The five-part Finale: gather the team, execute the plan, face a high-tower surprise, dig deep, and achieve victory as a changed person. The world is made better.',
+    keyQuestions:['How does the hero defeat the antagonist in a way that PROVES their transformation?','Which characters from the Setup are involved in the final battle or resolution?','What is the "high tower surprise" — the unexpected twist that forces one last dig-deep moment?','How is the world demonstrably better by the end of the Finale than it was at the start?','How does the B Story resolve alongside the A Story?'],
+    tips:'The hero must win through their CHANGED self — not through luck or an outside rescue. Every promise made in the Setup must be paid off. The resolution should feel both earned and inevitable.',
+    examples:'"Legally Blonde": Elle wins the case using haircare knowledge — her unique identity is her greatest strength. "The Hunger Games": Katniss and Peeta defy the Capitol with the berries — together. "Die Hard": John defeats Hans using Hans\'s own overconfidence against him.'
+  },
+  {
+    num:15, name:'Final Image', pct:'99–100%', act:3,
+    hint:'"After" snapshot — the deliberate mirror of the Opening Image, proving the hero\'s completed transformation.',
+    description:'The bookend to the Opening Image. A single scene or image showing the hero\'s world NOW, after transformation. It should directly echo the Opening Image — the same character, setting, or situation seen in a completely new light because the hero has changed. This is visual and emotional proof that the journey mattered.',
+    keyQuestions:['How does this image mirror or contrast the Opening Image specifically?','What is concretely different now — about the hero, their world, their relationships?','Does this image prove the transformation without needing words to explain it?','Does this feel like a complete ending — peaceful, earned, and resonant?'],
+    tips:'The best Final Images are quietly powerful — a simple image carrying the whole weight of the story. It should feel both complete and inevitable. Less is more.',
+    examples:'"Legally Blonde": Elle graduates top of her class and delivers the commencement address — total contrast to opening sorority scene. "Up": Carl and Russell share the Adventure Book on the curb — the simplest, most perfect mirror. "The Karate Kid": Daniel holds the trophy, finally belonging — transformed from the lonely outsider.'
+  },
 ];
 
 // node_type → defaults
@@ -718,6 +1178,10 @@ function updateToolbar() {
       <div class="tb-sep"></div>
       <button class="tb-btn" onclick="addBeat()" style="color:#a5b4fc;border-color:rgba(99,102,241,0.35)">+ Add Beat</button>
       <div class="tb-sep"></div>
+      <button class="tb-btn" onclick="openPlanner()" style="color:#c084fc;border-color:rgba(168,85,247,0.35)"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:12px;height:12px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/></svg>Planner</button>
+      <button class="tb-btn" onclick="openDocView()" style="color:#34d399;border-color:rgba(16,185,129,0.35)"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:12px;height:12px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>Document</button>
+      <button class="tb-btn" onclick="openBoardSettings()" title="Novel settings"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:12px;height:12px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg></button>
+      <div class="tb-sep"></div>
       <button class="tb-btn" id="btn-connect" onclick="toggleConnect()"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>Connect</button>`;
   } else if (type === 'fiction') {
     html = `
@@ -808,6 +1272,23 @@ function mountNode(n) {
     const actNum   = meta.act || 1;
     const actColor = actNum === 1 ? '#f59e0b' : actNum === 3 ? '#10b981' : '#6366f1';
     const numBg    = actNum === 1 ? 'rgba(245,158,11,0.18)' : actNum === 3 ? 'rgba(16,185,129,0.18)' : 'rgba(99,102,241,0.18)';
+    // Find rich beat data
+    const beatDef  = SAVE_THE_CAT_BEATS.find(b => b.num === (meta.beatNum||0));
+    const kqHtml   = beatDef ? beatDef.keyQuestions.slice(0,2).map(q => `<div class="beat-kq-item">${esc(q)}</div>`).join('') : '';
+    // Novel planning summary
+    const scenes   = meta.scenes || [];
+    const chars    = meta.characters || [];
+    const hasNovel = meta.chapters || chars.length || scenes.length || meta.targetWords;
+    const charChips= chars.slice(0,3).map(c=>`<span style="font-size:9px;padding:1px 6px;border-radius:10px;background:rgba(99,102,241,0.18);color:#818cf8;border:1px solid rgba(99,102,241,0.25)">${esc(c)}</span>`).join('');
+    const hasDraft = !!meta.draftContent;
+    const novelHtml = hasNovel ? `
+      <div style="margin-top:7px;padding-top:7px;border-top:1px solid rgba(255,255,255,0.05);display:flex;flex-direction:column;gap:3px">
+        ${(meta.chapters||meta.chapterTitle) ? `<div style="font-size:9.5px;color:#5a7a9a;font-weight:500">${meta.chapterTitle ? `📖 ${esc(meta.chapterTitle)}` : ''}${meta.chapters&&meta.chapterTitle?' · ':''}${meta.chapters?`Ch. ${esc(meta.chapters)}`:''}</div>` : ''}
+        ${chars.length  ? `<div style="display:flex;gap:3px;flex-wrap:wrap">${charChips}${chars.length>3?`<span style="font-size:9px;color:#334155">+${chars.length-3}</span>`:''}</div>` : ''}
+        ${scenes.length ? `<div style="font-size:9.5px;color:#445566">🎬 ${scenes.length} scene${scenes.length>1?'s':''}</div>` : ''}
+        ${meta.targetWords ? `<div style="font-size:9.5px;color:#445566">📝 ${Number(meta.targetWords).toLocaleString()} words</div>` : ''}
+        ${hasDraft ? `<div style="font-size:9.5px;color:#3d5c3d;margin-top:2px">✍ Draft: ${esc(meta.draftContent.slice(0,60))}${meta.draftContent.length>60?'…':''}</div>` : ''}
+      </div>` : (!hasDraft ? '' : `<div style="margin-top:7px;padding-top:7px;border-top:1px solid rgba(255,255,255,0.05)"><div style="font-size:9.5px;color:#3d5c3d">✍ ${esc(meta.draftContent.slice(0,80))}${meta.draftContent.length>80?'…':''}</div></div>`);
     el.innerHTML = `
       <div class="beat-act-bar" style="background:${actColor}"></div>
       <div class="beat-header">
@@ -818,11 +1299,14 @@ function mountNode(n) {
         </div>
       </div>
       <div class="beat-body">
-        ${meta.hint ? `<div class="beat-hint">${esc(meta.hint.slice(0,110))}${meta.hint.length>110?'…':''}</div>` : ''}
-        ${n.description ? `<div class="beat-notes">${esc(n.description)}</div>` : ''}
+        ${meta.hint ? `<div class="beat-hint">${esc(meta.hint)}</div>` : ''}
+        ${kqHtml ? `<div class="beat-kq">${kqHtml}</div>` : ''}
+        ${(meta.storyNotes||n.description) ? `<div class="beat-notes">${esc(meta.storyNotes||n.description)}</div>` : ''}
+        ${novelHtml}
       </div>
       <div class="n-actions">
-        <button class="n-btn" onclick="event.stopPropagation();openEdit('${n.id}')">✎ Edit</button>
+        <button class="n-btn" onclick="event.stopPropagation();openBeatGuide(${meta.beatNum||0})" style="color:#818cf8">? Guide</button>
+        <button class="n-btn" onclick="event.stopPropagation();openBeatEdit('${n.id}')">✎ Edit</button>
         <button class="n-btn del" onclick="event.stopPropagation();deleteNode('${n.id}')">✕</button>
       </div>`;
   } else {
@@ -1300,8 +1784,10 @@ function parseMeta(n) {
 
 // ── EDIT MODAL ────────────────────────────────────────────────
 function openEdit(id){
-  closeCtx(); editId=id;
+  closeCtx();
   const n=nodes.find(x=>x.id===id);
+  if (n && n.node_type === 'beat') { openBeatEdit(id); return; }
+  editId=id;
   const def=NODE_DEFS[n.node_type]||NODE_DEFS.idea;
   document.getElementById('edit-modal-title').textContent=`Edit ${def.label}`;
   document.getElementById('e-title').value=n.title;
@@ -1440,7 +1926,10 @@ function updateEmpty(){
 
 // ── KEYBOARD ──────────────────────────────────────────────────
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){closeEdit();closeConv();closeEdgeLabel();closeCtx();if(connecting)cancelConnect();}
+  if(e.key==='Escape'){
+    closeEdit();closeConv();closeEdgeLabel();closeCtx();closeBeatGuide();closeBeatEdit();closeBoardSettings();
+    if(connecting)cancelConnect();
+  }
 });
 document.getElementById('nb-name').addEventListener('keydown',e=>{if(e.key==='Enter')createBoard();if(e.key==='Escape')closeNewBoard();});
 
@@ -1473,6 +1962,1021 @@ async function doExportProject() {
     const err = await res.json();
     alert('Export failed: '+(err.error||'unknown error'));
   }
+}
+
+// ── BOARD SETTINGS ────────────────────────────────────────────
+function getBoardMeta() {
+  try { return JSON.parse(board?.description || '{}'); } catch { return {}; }
+}
+function getTotalWords() {
+  return getBoardMeta().totalWords || 90000;
+}
+
+function openBoardSettings() {
+  const m = getBoardMeta();
+  document.getElementById('bs-total-words').value = m.totalWords || 90000;
+  document.getElementById('bs-board-name').value  = board?.name || '';
+  document.getElementById('board-settings-overlay').classList.add('show');
+  setTimeout(() => document.getElementById('bs-board-name').focus(), 50);
+}
+function closeBoardSettings() {
+  document.getElementById('board-settings-overlay').classList.remove('show');
+}
+async function saveBoardSettings() {
+  if (!board) return;
+  const totalWords = parseInt(document.getElementById('bs-total-words').value) || 90000;
+  const name       = document.getElementById('bs-board-name').value.trim() || board.name;
+  const meta       = getBoardMeta();
+  meta.totalWords  = totalWords;
+  const res = await fetch('/api/brainstorm/boards/' + board.id, {
+    method: 'PATCH', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ name, description: JSON.stringify(meta) })
+  });
+  if (res.ok) {
+    const updated = await res.json();
+    const idx = boards.findIndex(b => b.id === board.id);
+    if (idx !== -1) boards[idx] = updated;
+    board = updated;
+    renderBoardList();
+  }
+  closeBoardSettings();
+}
+
+// ── BEAT EDIT MODAL ────────────────────────────────────────────
+let beatEditId   = null;
+let beScenes     = [];   // working copy of scenes array
+let beChars      = [];   // working copy of chars array
+
+function openBeatEdit(id) {
+  closeCtx();
+  beatEditId = id;
+  const n    = nodes.find(x => x.id === id);
+  if (!n) return;
+  const meta     = parseMeta(n);
+  const beat     = SAVE_THE_CAT_BEATS.find(b => b.num === (meta.beatNum || 0));
+  const actColor = (meta.act||1) === 1 ? '#f59e0b' : (meta.act||1) === 3 ? '#10b981' : '#6366f1';
+  const numBg    = (meta.act||1) === 1 ? 'rgba(245,158,11,0.22)' : (meta.act||1) === 3 ? 'rgba(16,185,129,0.22)' : 'rgba(99,102,241,0.22)';
+
+  const numEl = document.getElementById('be-num-circle');
+  numEl.textContent = meta.beatNum || '?';
+  numEl.style.background = numBg;
+  numEl.style.color = actColor;
+  document.getElementById('be-beat-name').textContent = n.title;
+  document.getElementById('be-beat-sub').textContent  = `Beat ${meta.beatNum||'?'} of 15 · ${meta.pct||''} · Act ${meta.act||1}`;
+
+  // Hint box
+  if (beat) {
+    document.getElementById('be-hint-box').innerHTML = `<div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#4f46e5;margin-bottom:5px">What this beat needs</div><div class="be-hint-text">${esc(beat.hint)}</div>`;
+  } else {
+    document.getElementById('be-hint-box').style.display = 'none';
+  }
+
+  // Story tab
+  document.getElementById('be-story-notes').value  = meta.storyNotes || n.description || '';
+  document.getElementById('be-draft-content').value = meta.draftContent || '';
+
+  // Novel tab
+  document.getElementById('be-chapter-title').value = meta.chapterTitle || '';
+  document.getElementById('be-chapters').value     = meta.chapters || '';
+  document.getElementById('be-pov').value          = meta.povCharacter || '';
+  document.getElementById('be-location').value     = meta.location || '';
+  document.getElementById('be-target-words').value = meta.targetWords || '';
+  document.getElementById('be-subplot').value      = meta.subplotNotes || '';
+  // Suggested word count
+  if (beat) {
+    const total = getTotalWords();
+    const pctStr = beat.pct.replace(/[^0-9–\-]/g,'');
+    const parts  = pctStr.split(/[–\-]/);
+    const lo = parseFloat(parts[0])||0, hi = parseFloat(parts[1]||parts[0])||lo;
+    const suggested = Math.round(((lo + hi) / 2 / 100) * total);
+    document.getElementById('be-wc-suggestion').textContent = suggested
+      ? `Suggested: ~${suggested.toLocaleString()} words (${beat.pct} of ${(total/1000).toFixed(0)}k target)`
+      : '';
+  }
+
+  // Scenes tab
+  beScenes = JSON.parse(JSON.stringify(meta.scenes || []));
+  renderBeScenes();
+
+  // Characters tab
+  beChars = [...(meta.characters || [])];
+  renderBeChips();
+  document.getElementById('be-char-notes').value = meta.characterNotes || '';
+
+  // Show first tab
+  switchBeTab('story', document.querySelector('#beat-edit-overlay .be-tab'));
+  document.getElementById('beat-edit-overlay').classList.add('show');
+  setTimeout(() => document.getElementById('be-story-notes').focus(), 60);
+}
+
+function closeBeatEdit() {
+  document.getElementById('beat-edit-overlay').classList.remove('show');
+  beatEditId = null; beScenes = []; beChars = [];
+}
+
+function switchBeTab(name, el) {
+  document.querySelectorAll('#beat-edit-overlay .be-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#beat-edit-overlay .be-panel').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('be-panel-' + name).classList.add('active');
+}
+
+async function saveBeatEdit() {
+  const n = nodes.find(x => x.id === beatEditId);
+  if (!n) return;
+  const meta = parseMeta(n);
+
+  // Story
+  meta.storyNotes    = document.getElementById('be-story-notes').value.trim();
+  meta.draftContent  = document.getElementById('be-draft-content').value.trim();
+  // Novel structure
+  meta.chapterTitle   = document.getElementById('be-chapter-title').value.trim();
+  meta.chapters       = document.getElementById('be-chapters').value.trim();
+  meta.povCharacter   = document.getElementById('be-pov').value.trim();
+  meta.location       = document.getElementById('be-location').value.trim();
+  meta.targetWords    = parseInt(document.getElementById('be-target-words').value) || 0;
+  meta.subplotNotes   = document.getElementById('be-subplot').value.trim();
+  // Scenes
+  meta.scenes         = beScenes;
+  // Characters
+  meta.characters     = beChars;
+  meta.characterNotes = document.getElementById('be-char-notes').value.trim();
+
+  const body = { description: meta.storyNotes, metadata: meta };
+  const res  = await fetch('/api/brainstorm/nodes/' + beatEditId, {
+    method: 'PATCH', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)
+  });
+  const updated = await res.json();
+  const idx = nodes.findIndex(x => x.id === beatEditId);
+  if (idx !== -1) nodes[idx] = updated;
+  closeBeatEdit();
+  refreshNode(updated);
+}
+
+// ── SCENE BUILDER ─────────────────────────────────────────────
+function beAddScene() {
+  const id = 'sc-' + Date.now();
+  beScenes.push({ id, title: '', pov: '', location: '', goal: '', conflict: '', outcome: '', words: 0 });
+  renderBeScenes();
+  // Focus the new scene's title
+  setTimeout(() => {
+    const last = document.querySelector('#be-scene-list .scene-row:last-child input[data-field="title"]');
+    if (last) { last.focus(); beExpandScene(id); }
+  }, 40);
+}
+
+function beDeleteScene(id) {
+  beScenes = beScenes.filter(s => s.id !== id);
+  renderBeScenes();
+}
+
+function beExpandScene(id) {
+  const exp = document.getElementById('be-sc-expand-' + id);
+  if (exp) exp.classList.toggle('open');
+}
+
+function beSceneChange(id, field, val) {
+  const s = beScenes.find(s => s.id === id);
+  if (s) {
+    s[field] = field === 'words' ? (parseInt(val) || 0) : val;
+    updateBeSceneWcTotal();
+  }
+}
+
+function updateBeSceneWcTotal() {
+  const total = beScenes.reduce((sum, s) => sum + (s.words || 0), 0);
+  const el = document.getElementById('be-scene-wc-total');
+  if (el) el.textContent = total ? total.toLocaleString() + ' words planned' : '';
+}
+
+function renderBeScenes() {
+  const list = document.getElementById('be-scene-list');
+  if (!list) return;
+  if (!beScenes.length) {
+    list.innerHTML = `<div style="font-size:11.5px;color:#2a3547;padding:8px 0">No scenes yet — click Add Scene to start planning.</div>`;
+    updateBeSceneWcTotal();
+    return;
+  }
+  list.innerHTML = beScenes.map((s, i) => `
+    <div class="scene-row" id="be-sc-${s.id}">
+      <div class="scene-row-head" onclick="beExpandScene('${s.id}')">
+        <span class="scene-drag">☰</span>
+        <input class="scene-row-title inp" style="background:transparent;border:none;padding:0;font-size:12px;color:#94a3b8;outline:none;flex:1"
+          data-field="title" value="${esc(s.title)}" placeholder="Scene ${i+1} title…"
+          onclick="event.stopPropagation()"
+          oninput="beSceneChange('${s.id}','title',this.value)">
+        <input class="scene-row-words inp" style="background:transparent;border:none;padding:0;font-size:11px;color:#334155;outline:none;width:70px;text-align:right"
+          data-field="words" type="number" value="${s.words||''}" placeholder="words"
+          onclick="event.stopPropagation()"
+          oninput="beSceneChange('${s.id}','words',this.value)">
+        <button class="scene-row-del" onclick="event.stopPropagation();beDeleteScene('${s.id}')">✕</button>
+      </div>
+      <div class="scene-expand" id="be-sc-expand-${s.id}">
+        <div class="scene-expand-grid">
+          <div><label class="lbl">POV Character</label><input class="inp" type="text" value="${esc(s.pov)}" placeholder="Who's POV?" oninput="beSceneChange('${s.id}','pov',this.value)"></div>
+          <div><label class="lbl">Location</label><input class="inp" type="text" value="${esc(s.location)}" placeholder="Where?" oninput="beSceneChange('${s.id}','location',this.value)"></div>
+        </div>
+        <div class="scene-expand-full" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px">
+          <div><label class="lbl">Scene Goal</label><input class="inp" type="text" value="${esc(s.goal)}" placeholder="What must happen?" oninput="beSceneChange('${s.id}','goal',this.value)"></div>
+          <div><label class="lbl">Conflict</label><input class="inp" type="text" value="${esc(s.conflict)}" placeholder="What gets in the way?" oninput="beSceneChange('${s.id}','conflict',this.value)"></div>
+          <div><label class="lbl">Outcome</label><input class="inp" type="text" value="${esc(s.outcome)}" placeholder="How does it end?" oninput="beSceneChange('${s.id}','outcome',this.value)"></div>
+        </div>
+      </div>
+    </div>`).join('');
+  updateBeSceneWcTotal();
+}
+
+// ── CHARACTER CHIPS ────────────────────────────────────────────
+function renderBeChips() {
+  const wrap = document.getElementById('be-char-wrap');
+  const inp  = document.getElementById('be-char-input');
+  wrap.querySelectorAll('.chip').forEach(c => c.remove());
+  beChars.forEach(name => {
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    chip.innerHTML = `${esc(name)}<button class="chip-x" onclick="beRemoveChar('${esc(name).replace(/'/g,"\\'")}')">✕</button>`;
+    wrap.insertBefore(chip, inp);
+  });
+}
+function beRemoveChar(name) {
+  beChars = beChars.filter(c => c !== name);
+  renderBeChips();
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.activeElement.id === 'be-char-input') {
+    e.preventDefault();
+    const val = document.getElementById('be-char-input').value.trim();
+    if (val && !beChars.includes(val)) { beChars.push(val); renderBeChips(); }
+    document.getElementById('be-char-input').value = '';
+  }
+});
+
+// ── NOVEL PLANNER ─────────────────────────────────────────────
+function openPlanner() {
+  if (!board) return;
+  document.getElementById('planner-board-name').textContent = board.name;
+  renderPlanner();
+  document.getElementById('planner-overlay').classList.add('show');
+}
+function closePlanner() {
+  document.getElementById('planner-overlay').classList.remove('show');
+}
+
+function renderPlanner() {
+  const bodyEl    = document.getElementById('planner-body');
+  const totalWds  = getTotalWords();
+
+  // Build beatMap
+  const beatMap = {};
+  nodes.filter(n => n.node_type === 'beat').forEach(n => {
+    const m = parseMeta(n);
+    if (m.beatNum) beatMap[m.beatNum] = { node: n, meta: m };
+  });
+
+  // Compute totals
+  let plannedTotal = 0, scenesTotal = 0;
+  SAVE_THE_CAT_BEATS.forEach(beat => {
+    const entry = beatMap[beat.num];
+    if (!entry) return;
+    const m = entry.meta;
+    plannedTotal += m.targetWords || 0;
+    scenesTotal  += (m.scenes || []).length;
+  });
+  const allChars = new Set();
+  SAVE_THE_CAT_BEATS.forEach(b => { const e = beatMap[b.num]; if (e) (e.meta.characters||[]).forEach(c => allChars.add(c)); });
+
+  const pct = Math.min(100, Math.round((plannedTotal / totalWds) * 100));
+  const barColor = pct < 60 ? '#f59e0b' : pct < 90 ? '#6366f1' : '#10b981';
+
+  let html = `
+    <div class="planner-title">${esc(board.name)}</div>
+    <div class="planner-meta">Save the Cat! · 15-Beat Structure · Novel Planner</div>
+    <div class="planner-stats">
+      <div class="planner-stat">
+        <div class="planner-stat-val">${(totalWds/1000).toFixed(0)}k</div>
+        <div class="planner-stat-label">Word Count Target</div>
+      </div>
+      <div class="planner-stat">
+        <div class="planner-stat-val" style="color:${barColor}">${plannedTotal ? (plannedTotal/1000).toFixed(1)+'k' : '—'}</div>
+        <div class="planner-stat-label">Words Planned</div>
+        ${plannedTotal ? `<div class="planner-wc-bar" style="margin-top:8px"><div class="planner-wc-fill" style="width:${pct}%;background:${barColor}"></div></div>` : ''}
+      </div>
+      <div class="planner-stat">
+        <div class="planner-stat-val">${scenesTotal||'—'}</div>
+        <div class="planner-stat-label">Scenes Planned</div>
+      </div>
+      <div class="planner-stat">
+        <div class="planner-stat-val">${allChars.size||'—'}</div>
+        <div class="planner-stat-label">Characters</div>
+      </div>
+    </div>`;
+
+  let lastAct = 0;
+  SAVE_THE_CAT_BEATS.forEach(beat => {
+    const actColor = beat.act === 1 ? '#f59e0b' : beat.act === 3 ? '#10b981' : '#6366f1';
+    const actBg    = beat.act === 1 ? 'rgba(245,158,11,0.14)' : beat.act === 3 ? 'rgba(16,185,129,0.14)' : 'rgba(99,102,241,0.14)';
+    const actLabel = beat.act === 1 ? 'Act One' : beat.act === 3 ? 'Act Three' : 'Act Two';
+    const numBg    = beat.act === 1 ? 'rgba(245,158,11,0.25)' : beat.act === 3 ? 'rgba(16,185,129,0.25)' : 'rgba(99,102,241,0.25)';
+
+    if (beat.act !== lastAct) {
+      // Act stats
+      const actBeats   = SAVE_THE_CAT_BEATS.filter(b => b.act === beat.act);
+      const actPlanned = actBeats.reduce((s,b) => s + ((beatMap[b.num]?.meta?.targetWords)||0), 0);
+      const actScenes  = actBeats.reduce((s,b) => s + ((beatMap[b.num]?.meta?.scenes||[]).length), 0);
+      html += `
+        <div class="planner-act ${lastAct ? 'style="margin-top:28px"' : ''}">
+          <div class="planner-act-header">
+            <div class="planner-act-line"></div>
+            <div class="planner-act-label" style="background:${actBg};color:${actColor};border:1px solid ${actColor}30">${actLabel}</div>
+            <div style="font-size:10px;color:#2a3547">${actPlanned ? (actPlanned/1000).toFixed(1)+'k words' : ''} ${actScenes ? '· ' + actScenes + ' scenes' : ''}</div>
+            <div class="planner-act-line"></div>
+          </div>`;
+      lastAct = beat.act;
+    }
+
+    const entry = beatMap[beat.num];
+    const m     = entry?.meta || {};
+    const node  = entry?.node;
+    const tw    = m.targetWords || 0;
+    const scenes= m.scenes || [];
+    const chars = m.characters || [];
+    const wcPct = tw ? Math.min(100, Math.round((tw / totalWds) * 100)) : 0;
+
+    // Scenes detail rows
+    const scenesHtml = scenes.length ? `
+      <table class="planner-scene-table">
+        <tr><th>#</th><th>Title</th><th>POV</th><th>Location</th><th>Goal</th><th>Words</th></tr>
+        ${scenes.map((s,i) => `
+          <tr>
+            <td style="color:#334155">${i+1}</td>
+            <td style="color:#94a3b8;font-weight:500">${esc(s.title)||'<span style="color:#2a3547;font-style:italic">Untitled</span>'}</td>
+            <td>${esc(s.pov)}</td>
+            <td>${esc(s.location)}</td>
+            <td>${esc(s.goal)}</td>
+            <td style="font-variant-numeric:tabular-nums;white-space:nowrap">${s.words ? Number(s.words).toLocaleString() : ''}</td>
+          </tr>`).join('')}
+      </table>` : `<div style="font-size:11.5px;color:#2a3547;padding:6px 0;font-style:italic">No scenes planned yet.</div>`;
+
+    const notesHtml = m.storyNotes ? `<div class="planner-notes">${esc(m.storyNotes.slice(0,200))}${m.storyNotes.length>200?'…':''}</div>` : '';
+    const subplotHtml = m.subplotNotes ? `<div style="font-size:11px;color:#334155;margin-top:6px">Subplot: ${esc(m.subplotNotes)}</div>` : '';
+
+    html += `
+      <div class="planner-beat-row" id="planner-row-${beat.num}">
+        <div class="planner-beat-head" onclick="togglePlannerRow(${beat.num})">
+          <div class="planner-beat-num" style="background:${numBg};color:${actColor}">${beat.num}</div>
+          <div>
+            <div class="planner-beat-name">${esc(beat.name)}</div>
+            <div class="planner-beat-pct">${esc(beat.pct)}</div>
+          </div>
+          <div class="planner-beat-chapters" style="font-size:11.5px;color:${m.chapters?'#64748b':'#2a3547'}">${m.chapters ? 'Ch. '+esc(m.chapters) : '—'}</div>
+          <div>
+            <div class="planner-beat-wc" style="color:${tw?'#64748b':'#2a3547'}">${tw ? tw.toLocaleString()+' wds' : '—'}</div>
+            ${tw ? `<div class="planner-wc-bar"><div class="planner-wc-fill" style="width:${wcPct*4}%;background:${actColor}88"></div></div>` : ''}
+          </div>
+          <div class="planner-beat-scenes" style="color:${scenes.length?'#64748b':'#2a3547'}">${scenes.length ? scenes.length+' scene'+(scenes.length>1?'s':'') : '—'}</div>
+        </div>
+        <div class="planner-beat-detail" id="planner-detail-${beat.num}">
+          ${chars.length ? `<div class="planner-detail-chars">${chars.map(c=>`<div class="planner-char-chip">${esc(c)}</div>`).join('')}</div>` : ''}
+          ${notesHtml}
+          ${subplotHtml}
+          ${scenesHtml}
+          ${node ? `<button class="planner-edit-btn" onclick="openBeatEdit('${node.id}')">✎ Edit Beat</button>` : ''}
+        </div>
+      </div>`;
+  });
+
+  // Close last act div
+  html += `</div>`;
+
+  bodyEl.innerHTML = html;
+}
+
+function togglePlannerRow(beatNum) {
+  const detail = document.getElementById('planner-detail-' + beatNum);
+  if (detail) detail.classList.toggle('open');
+}
+
+// ── BEAT GUIDE MODAL ──────────────────────────────────────────
+function openBeatGuide(beatNum) {
+  const beat = SAVE_THE_CAT_BEATS.find(b => b.num === beatNum);
+  if (!beat) return;
+  const actColor = beat.act === 1 ? '#f59e0b' : beat.act === 3 ? '#10b981' : '#6366f1';
+  const actBg    = beat.act === 1 ? 'rgba(245,158,11,0.18)' : beat.act === 3 ? 'rgba(16,185,129,0.18)' : 'rgba(99,102,241,0.18)';
+  const actLabel = beat.act === 1 ? 'Act One' : beat.act === 3 ? 'Act Three' : 'Act Two';
+
+  const numEl = document.getElementById('bg-num-circle');
+  numEl.textContent = beat.num;
+  numEl.style.background = actBg;
+  numEl.style.color = actColor;
+
+  document.getElementById('bg-name').textContent = beat.name;
+  document.getElementById('bg-pct').textContent  = `Beat ${beat.num} of 15 · ${beat.pct}`;
+
+  const badge = document.getElementById('bg-act-badge');
+  badge.textContent = actLabel;
+  badge.style.background = actBg;
+  badge.style.color = actColor;
+  badge.style.border = `1px solid ${actColor}40`;
+
+  const kqHtml = beat.keyQuestions.map(q => `<li>${esc(q)}</li>`).join('');
+  document.getElementById('bg-body').innerHTML = `
+    <div class="guide-section">
+      <div class="guide-section-title">About This Beat</div>
+      <p class="guide-desc">${esc(beat.description)}</p>
+    </div>
+    <div class="guide-section">
+      <div class="guide-section-title">Key Questions to Answer</div>
+      <ul class="guide-q-list">${kqHtml}</ul>
+    </div>
+    <div class="guide-section" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div class="guide-section-title">Writing Tips</div>
+        <p class="guide-tip">${esc(beat.tips)}</p>
+      </div>
+      <div>
+        <div class="guide-section-title">Examples</div>
+        <p class="guide-examples">${esc(beat.examples)}</p>
+      </div>
+    </div>`;
+
+  document.getElementById('beat-guide-overlay').classList.add('show');
+}
+
+function closeBeatGuide() {
+  document.getElementById('beat-guide-overlay').classList.remove('show');
+}
+
+// ── DOCUMENT VIEW ─────────────────────────────────────────────
+let docViewMode = 'beats'; // 'beats' | 'chapters'
+
+function switchDocView(mode) {
+  docViewMode = mode;
+  document.getElementById('doc-tab-beats').classList.toggle('active', mode === 'beats');
+  document.getElementById('doc-tab-chapters').classList.toggle('active', mode === 'chapters');
+  renderDocView();
+}
+
+function openDocView() {
+  if (!board || board.type !== 'fiction_15beats') return;
+  document.getElementById('doc-board-name').textContent = board.name;
+  renderDocView();
+  document.getElementById('doc-view-overlay').classList.add('show');
+}
+
+function closeDocView() {
+  document.getElementById('doc-view-overlay').classList.remove('show');
+}
+
+function renderDocView() {
+  // Sync tab UI
+  document.getElementById('doc-tab-beats').classList.toggle('active', docViewMode === 'beats');
+  document.getElementById('doc-tab-chapters').classList.toggle('active', docViewMode === 'chapters');
+
+  if (docViewMode === 'chapters') { renderChapterSkeleton(); return; }
+
+  const bodyEl = document.getElementById('doc-body');
+
+  // Map beatNum → node
+  const beatMap = {};
+  nodes.filter(n => n.node_type === 'beat').forEach(n => {
+    const m = parseMeta(n);
+    if (m.beatNum) beatMap[m.beatNum] = n;
+  });
+
+  let html = `
+    <div contenteditable="true" spellcheck="true" class="doc-title" id="doc-story-title">${esc(board.name)}</div>
+    <div class="doc-header-meta">Save the Cat! · 15-Beat Story Structure</div>`;
+
+  let lastAct = 0;
+  SAVE_THE_CAT_BEATS.forEach(beat => {
+    const node     = beatMap[beat.num];
+    const actColor = beat.act === 1 ? '#f59e0b' : beat.act === 3 ? '#10b981' : '#6366f1';
+    const actBg    = beat.act === 1 ? 'rgba(245,158,11,0.12)' : beat.act === 3 ? 'rgba(16,185,129,0.12)' : 'rgba(99,102,241,0.12)';
+    const actLabel = beat.act === 1 ? 'Act One' : beat.act === 3 ? 'Act Three' : 'Act Two';
+    const numBg    = beat.act === 1 ? 'rgba(245,158,11,0.25)' : beat.act === 3 ? 'rgba(16,185,129,0.25)' : 'rgba(99,102,241,0.25)';
+    const nodeId   = node ? node.id : '';
+
+    if (beat.act !== lastAct) {
+      html += `
+        <div class="doc-act-divider">
+          <div class="doc-act-divider-line"></div>
+          <div class="doc-act-label" style="background:${actBg};color:${actColor};border:1px solid ${actColor}30">${actLabel}</div>
+          <div class="doc-act-divider-line"></div>
+        </div>`;
+      lastAct = beat.act;
+    }
+
+    const kqHtml = beat.keyQuestions.map(q => `<li>${esc(q)}</li>`).join('');
+    const guideSectionHtml = `
+      <div class="doc-guidance" id="doc-guidance-${beat.num}">
+        <p class="doc-guidance-desc">${esc(beat.description)}</p>
+        <div class="doc-guidance-cols">
+          <div>
+            <div class="doc-guidance-col-heading">Key Questions</div>
+            <ul class="doc-guidance-list">${kqHtml}</ul>
+          </div>
+          <div>
+            <div class="doc-guidance-col-heading">Tips</div>
+            <p class="doc-guidance-tip">${esc(beat.tips)}</p>
+            <div class="doc-guidance-col-heading" style="margin-top:10px">Examples</div>
+            <p class="doc-guidance-examples">${esc(beat.examples)}</p>
+          </div>
+        </div>
+      </div>`;
+
+    html += `
+      <div class="doc-section" data-beat="${beat.num}" data-node-id="${nodeId}">
+        <div class="doc-beat-header" style="background:${actBg};border-left:3px solid ${actColor}">
+          <div class="doc-beat-meta">
+            <div class="doc-beat-num" style="background:${numBg};color:${actColor}">${beat.num}</div>
+            <div>
+              <div class="doc-beat-name">${esc(beat.name)}</div>
+              <div class="doc-beat-sub">${esc(beat.pct)} · ${actLabel} · Beat ${beat.num} of 15</div>
+            </div>
+          </div>
+          <button class="doc-guide-btn" onclick="toggleDocGuide(this, ${beat.num})">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.122 2.575-2.772 2.803C12.49 13 12 13.5 12 14m0 2h.01"/></svg>
+            Guide
+          </button>
+        </div>
+        ${guideSectionHtml}
+        <div class="doc-editor-wrap">
+          <div class="doc-editor"
+               contenteditable="true"
+               spellcheck="true"
+               data-beat="${beat.num}"
+               data-node-id="${nodeId}"
+               oninput="onDocEditorInput(this)"
+               data-placeholder="Write your ${esc(beat.name)} here…"></div>
+          <div class="doc-section-footer">
+            <span class="doc-wc" id="doc-wc-${beat.num}">0 words</span>
+            ${node && node.metadata ? (() => { const m2=parseMeta(node); return m2.targetWords ? `<span class="doc-wc">/ ${Number(m2.targetWords).toLocaleString()} target</span>` : ''; })() : ''}
+          </div>
+        </div>
+        <div id="doc-scenes-${beat.num}" class="doc-scene-panel" style="display:none"></div>
+      </div>`;
+  });
+
+  bodyEl.innerHTML = html;
+
+  // Populate editors and scene panels
+  SAVE_THE_CAT_BEATS.forEach(beat => {
+    const node   = beatMap[beat.num];
+    const editor = bodyEl.querySelector(`.doc-editor[data-beat="${beat.num}"]`);
+    if (editor) {
+      const content = node ? (parseMeta(node).storyNotes || node.description || '') : '';
+      if (content) editor.textContent = content;
+      updateDocWordCount(editor);
+    }
+    // Scene panel
+    const m      = node ? parseMeta(node) : {};
+    const scenes = m.scenes || [];
+    const panelEl = document.getElementById('doc-scenes-' + beat.num);
+    if (panelEl && scenes.length) {
+      panelEl.style.display = 'block';
+      panelEl.innerHTML = `
+        <div class="doc-scene-panel-title">Scenes in this beat</div>
+        ${scenes.map((s,i) => `
+          <div class="doc-scene-item">
+            <span class="doc-scene-num">${i+1}</span>
+            <span class="doc-scene-title">${esc(s.title||'Untitled scene')}${s.pov?` <span style="color:#2a3547;font-size:10px">· ${esc(s.pov)}</span>`:''}</span>
+            <span class="doc-scene-words">${s.words?Number(s.words).toLocaleString()+' wds':''}</span>
+          </div>`).join('')}`;
+    }
+  });
+
+  updateTotalWordCount();
+}
+
+function renderChapterSkeleton() {
+  const bodyEl = document.getElementById('doc-body');
+
+  // Build beatNum → node map
+  const beatMap = {};
+  nodes.filter(n => n.node_type === 'beat').forEach(n => {
+    const m = parseMeta(n);
+    if (m.beatNum) beatMap[m.beatNum] = n;
+  });
+
+  // Parse chapter assignments: group beats by chapter number
+  // chapters field can be "3", "3-5", "3,4", etc.
+  function parseChapterNums(str) {
+    if (!str) return [];
+    const nums = [];
+    str.split(/[,;]/).forEach(part => {
+      const range = part.trim().split(/[–\-]/);
+      const lo = parseInt(range[0]);
+      const hi = parseInt(range[1] || range[0]);
+      if (!isNaN(lo)) for (let i = lo; i <= (isNaN(hi) ? lo : hi); i++) nums.push(i);
+    });
+    return [...new Set(nums)];
+  }
+
+  // Build chapter → beats mapping
+  const chapterBeats = {}; // chapterNum → [{beatDef, node, meta}]
+  const chapterTitles = {}; // chapterNum → title string
+  const unplaced = [];
+
+  SAVE_THE_CAT_BEATS.forEach(beatDef => {
+    const node = beatMap[beatDef.num];
+    const meta = node ? parseMeta(node) : {};
+    const chNums = parseChapterNums(meta.chapters);
+    if (chNums.length === 0) {
+      unplaced.push({ beatDef, node, meta });
+    } else {
+      chNums.forEach(ch => {
+        if (!chapterBeats[ch]) chapterBeats[ch] = [];
+        chapterBeats[ch].push({ beatDef, node, meta });
+        if (!chapterTitles[ch] && meta.chapterTitle) chapterTitles[ch] = meta.chapterTitle;
+      });
+    }
+  });
+
+  const sortedChapters = Object.keys(chapterBeats).map(Number).sort((a, b) => a - b);
+
+  let html = `
+    <div contenteditable="true" spellcheck="true" class="doc-title" id="doc-story-title">${esc(board.name)}</div>
+    <div class="doc-header-meta">Chapter Skeleton · Save the Cat! 15-Beat Structure</div>`;
+
+  if (!sortedChapters.length && !unplaced.length) {
+    html += `<div style="text-align:center;padding:48px 0;color:#334155;font-size:13px">No beats have chapter assignments yet.<br><span style="font-size:11px;color:#2a3547;margin-top:6px;display:block">Open a beat, go to Novel Structure, and set a Chapter Number.</span></div>`;
+    bodyEl.innerHTML = html;
+    return;
+  }
+
+  sortedChapters.forEach(chNum => {
+    const beats = chapterBeats[chNum];
+    const title = chapterTitles[chNum] || '';
+    const totalWc = beats.reduce((s, b) => s + (b.meta.targetWords || 0), 0);
+    const acts = [...new Set(beats.map(b => b.beatDef.act))];
+    const actColor = acts.includes(2) ? '#6366f1' : acts[0] === 1 ? '#f59e0b' : '#10b981';
+    const actBg = acts.includes(2) ? 'rgba(99,102,241,0.14)' : acts[0] === 1 ? 'rgba(245,158,11,0.14)' : 'rgba(16,185,129,0.14)';
+
+    html += `<div class="chap-section" data-chapter="${chNum}">
+      <div class="chap-section-header">
+        <div class="chap-num-badge" style="background:${actBg};color:${actColor}">${chNum}</div>
+        <div>
+          <div class="chap-title-text">${title ? esc(title) : `Chapter ${chNum}`}</div>
+          <div class="chap-meta">${beats.map(b => `Beat ${b.beatDef.num}: ${esc(b.beatDef.name)}`).join(' · ')}${totalWc ? ` · ${totalWc.toLocaleString()} words target` : ''}</div>
+        </div>
+      </div>
+      <div class="chap-beat-pills">
+        ${beats.map(b => {
+          const bc = b.beatDef.act === 1 ? '#f59e0b' : b.beatDef.act === 3 ? '#10b981' : '#6366f1';
+          return `<span class="chap-beat-pill" style="color:${bc};border-color:${bc}40;background:${bc}12">${b.beatDef.num} · ${esc(b.beatDef.name)}</span>`;
+        }).join('')}
+      </div>`;
+
+    // Per-beat story notes (compact)
+    const hasNotes = beats.some(b => b.meta.storyNotes);
+    if (hasNotes) {
+      html += `<div style="padding:10px 18px 0">`;
+      beats.forEach(b => {
+        if (!b.meta.storyNotes) return;
+        const bc = b.beatDef.act === 1 ? '#f59e0b' : b.beatDef.act === 3 ? '#10b981' : '#6366f1';
+        html += `<div class="chap-beat-section" style="border-left:2px solid ${bc}30;padding-left:10px;margin-bottom:8px">
+          <div class="chap-beat-label" style="color:${bc}">${esc(b.beatDef.name)}</div>
+          <div class="chap-beat-notes">${esc(b.meta.storyNotes)}</div>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+
+    // Draft content editor — one per chapter, pre-filled from beat draft content
+    const combinedDraft = beats.map(b => b.meta.draftContent || '').filter(Boolean).join('\n\n');
+    // Build node ID list for saving
+    const nodeIds = beats.map(b => b.node?.id || '').filter(Boolean).join(',');
+
+    html += `<div style="padding:12px 18px 14px">
+      <div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#2a3547;margin-bottom:6px">Chapter Draft</div>
+      <div class="chap-draft-editor"
+           contenteditable="true"
+           spellcheck="true"
+           data-chapter="${chNum}"
+           data-node-ids="${esc(nodeIds)}"
+           oninput="onChapDraftInput(this)"
+           data-placeholder="Write or paste your chapter draft here…"></div>
+      <div class="chap-wc" id="chap-wc-${chNum}">0 words</div>
+    </div>
+    </div>`;
+
+    // Store combined draft for populating after innerHTML set
+  });
+
+  if (unplaced.length) {
+    html += `<div class="chap-unplaced">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#334155;margin-bottom:8px">Beats not assigned to a chapter</div>
+      ${unplaced.map(b => {
+        const bc = b.beatDef.act === 1 ? '#f59e0b' : b.beatDef.act === 3 ? '#10b981' : '#6366f1';
+        return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04)">
+          <span style="font-size:10.5px;font-weight:700;color:${bc};flex-shrink:0">${b.beatDef.num}. ${esc(b.beatDef.name)}</span>
+          <span style="font-size:11px;color:#334155">${b.meta.storyNotes ? esc(b.meta.storyNotes.slice(0,80))+(b.meta.storyNotes.length>80?'…':'') : esc(b.beatDef.hint)}</span>
+          ${b.node ? `<button class="tb-btn" style="margin-left:auto;padding:2px 8px;font-size:10px;flex-shrink:0" onclick="openBeatEdit('${b.node.id}')">Set Chapter</button>` : ''}
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  bodyEl.innerHTML = html;
+
+  // Populate draft editors with combined beat draft content
+  sortedChapters.forEach(chNum => {
+    const beats = chapterBeats[chNum];
+    const editor = bodyEl.querySelector(`.chap-draft-editor[data-chapter="${chNum}"]`);
+    if (!editor) return;
+    const parts = beats.map(b => {
+      const d = b.meta.draftContent || '';
+      if (!d) return '';
+      return `[Beat ${b.beatDef.num}: ${b.beatDef.name}]\n${d}`;
+    }).filter(Boolean);
+    if (parts.length) editor.textContent = parts.join('\n\n');
+    onChapDraftInput(editor);
+  });
+
+  updateTotalWordCount();
+}
+
+function onChapDraftInput(editor) {
+  const chNum = editor.dataset.chapter;
+  const text = editor.innerText || editor.textContent || '';
+  const wc = countWords(text);
+  const el = document.getElementById('chap-wc-' + chNum);
+  if (el) el.textContent = wc === 1 ? '1 word' : wc.toLocaleString() + ' words';
+  updateTotalWordCount();
+}
+
+function toggleDocGuide(btn, beatNum) {
+  const guidance = document.getElementById('doc-guidance-' + beatNum);
+  if (!guidance) return;
+  const isOpen = guidance.classList.contains('open');
+  guidance.classList.toggle('open', !isOpen);
+  btn.classList.toggle('active', !isOpen);
+}
+
+function countWords(text) {
+  const t = (text || '').trim();
+  if (!t) return 0;
+  return t.split(/\s+/).filter(s => s.length > 0).length;
+}
+
+function onDocEditorInput(editor) {
+  updateDocWordCount(editor);
+  updateTotalWordCount();
+}
+
+function updateDocWordCount(editor) {
+  const beatNum = editor.dataset.beat;
+  const text    = editor.innerText || editor.textContent || '';
+  const wc      = countWords(text);
+  const el      = document.getElementById('doc-wc-' + beatNum);
+  if (el) el.textContent = wc === 1 ? '1 word' : wc.toLocaleString() + ' words';
+}
+
+function updateTotalWordCount() {
+  const beatEditors = document.querySelectorAll('.doc-editor');
+  const chapEditors = document.querySelectorAll('.chap-draft-editor');
+  let total = 0;
+  beatEditors.forEach(ed => { total += countWords(ed.innerText || ed.textContent || ''); });
+  chapEditors.forEach(ed => { total += countWords(ed.innerText || ed.textContent || ''); });
+  const el = document.getElementById('doc-total-wc');
+  if (el) el.textContent = total.toLocaleString() + ' words';
+}
+
+async function saveDocContent() {
+  const btn = document.getElementById('doc-save-btn');
+  if (!btn) return;
+  btn.textContent = 'Saving…';
+  btn.disabled = true;
+
+  const promises = [];
+
+  if (docViewMode === 'beats') {
+    // Beat view: save storyNotes / description per beat
+    document.querySelectorAll('.doc-editor').forEach(editor => {
+      const nodeId = editor.dataset.nodeId;
+      if (!nodeId) return;
+      const node = nodes.find(n => n.id === nodeId);
+      if (!node) return;
+      const text = (editor.innerText || editor.textContent || '').trim();
+      if (node.description === text) return;
+      const meta = parseMeta(node);
+      meta.storyNotes = text;
+      const p = fetch('/api/brainstorm/nodes/' + nodeId, {
+        method: 'PATCH', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ description: text, metadata: meta })
+      }).then(r => r.json()).then(updated => {
+        const idx = nodes.findIndex(n => n.id === nodeId);
+        if (idx !== -1) nodes[idx] = updated;
+      });
+      promises.push(p);
+    });
+  } else {
+    // Chapter skeleton: save draftContent — split back per beat by [Beat N: Name] headers
+    document.querySelectorAll('.chap-draft-editor').forEach(editor => {
+      const nodeIdsStr = editor.dataset.nodeIds;
+      if (!nodeIdsStr) return;
+      const nodeIds = nodeIdsStr.split(',').filter(Boolean);
+      const fullText = (editor.innerText || editor.textContent || '').trim();
+
+      if (nodeIds.length === 1) {
+        // Single beat in chapter — save all text to that beat's draftContent
+        const nodeId = nodeIds[0];
+        const node = nodes.find(n => n.id === nodeId);
+        if (!node) return;
+        const meta = parseMeta(node);
+        if (meta.draftContent === fullText) return;
+        meta.draftContent = fullText;
+        const p = fetch('/api/brainstorm/nodes/' + nodeId, {
+          method: 'PATCH', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ metadata: meta })
+        }).then(r => r.json()).then(updated => {
+          const idx = nodes.findIndex(n => n.id === nodeId);
+          if (idx !== -1) nodes[idx] = updated;
+        });
+        promises.push(p);
+      } else {
+        // Multiple beats — try to split by [Beat N: Name] headers, else save full text to all
+        const segments = {};
+        let current = null;
+        fullText.split('\n').forEach(line => {
+          const m = line.match(/^\[Beat (\d+):/);
+          if (m) { current = parseInt(m[1]); segments[current] = []; }
+          else if (current !== null) segments[current].push(line);
+        });
+
+        nodeIds.forEach(nodeId => {
+          const node = nodes.find(n => n.id === nodeId);
+          if (!node) return;
+          const meta = parseMeta(node);
+          const beatNum = meta.beatNum;
+          const content = beatNum && segments[beatNum]
+            ? segments[beatNum].join('\n').trim()
+            : (Object.keys(segments).length === 0 ? fullText : '');
+          if (meta.draftContent === content) return;
+          meta.draftContent = content;
+          const p = fetch('/api/brainstorm/nodes/' + nodeId, {
+            method: 'PATCH', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ metadata: meta })
+          }).then(r => r.json()).then(updated => {
+            const idx = nodes.findIndex(n => n.id === nodeId);
+            if (idx !== -1) nodes[idx] = updated;
+          });
+          promises.push(p);
+        });
+      }
+    });
+  }
+
+  await Promise.all(promises);
+  btn.textContent = 'Saved!';
+  btn.style.color  = '#34d399';
+  setTimeout(() => { btn.textContent = 'Save'; btn.style.color = ''; btn.disabled = false; }, 2200);
+}
+
+// ── DOCX GENERATION ───────────────────────────────────────────
+function xmlEsc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+}
+
+function buildDocXml(titleText, sections) {
+  function para(text, opts = {}) {
+    const { bold = false, size = 24, color = null, italic = false, spaceBefore = 0, spaceAfter = 160, center = false } = opts;
+    const rPr = [
+      bold   ? '<w:b/>'           : '',
+      italic ? '<w:i/>'           : '',
+      size   ? `<w:sz w:val="${size}"/><w:szCs w:val="${size}"/>` : '',
+      color  ? `<w:color w:val="${color}"/>` : '',
+    ].join('');
+    const pPr = [
+      spaceBefore || spaceAfter ? `<w:spacing w:before="${spaceBefore}" w:after="${spaceAfter}"/>` : '',
+      center ? '<w:jc w:val="center"/>' : '',
+    ].join('');
+    const lines = text.split('\n');
+    const runs  = lines.map((line, i) =>
+      (i > 0 ? `<w:r><w:br/></w:r>` : '') +
+      (line.trim() ? `<w:r>${rPr ? `<w:rPr>${rPr}</w:rPr>` : ''}<w:t xml:space="preserve">${xmlEsc(line)}</w:t></w:r>` : '')
+    ).join('');
+    return `<w:p>${pPr ? `<w:pPr>${pPr}</w:pPr>` : ''}${runs}</w:p>`;
+  }
+
+  function pageBreak() {
+    return `<w:p><w:r><w:br w:type="page"/></w:r></w:p>`;
+  }
+
+  let body = '';
+
+  // Document title
+  body += para(titleText, { bold: true, size: 48, spaceBefore: 0, spaceAfter: 240, center: true });
+  body += para('Save the Cat! · 15-Beat Story Structure', { size: 20, color: '64748b', spaceAfter: 720, center: true });
+
+  let lastAct = 0;
+  sections.forEach(({ beat, content, chapterTitle, chapterNum }, idx) => {
+    const actLabel = beat.act === 1 ? 'ACT ONE' : beat.act === 3 ? 'ACT THREE' : 'ACT TWO';
+    if (beat.act !== lastAct) {
+      body += para('— ' + actLabel + ' —', { size: 18, color: '475569', italic: true, center: true, spaceBefore: 480, spaceAfter: 240 });
+      lastAct = beat.act;
+    }
+    // Chapter heading (if assigned)
+    if (chapterNum || chapterTitle) {
+      const chapLabel = chapterNum ? `Chapter ${chapterNum}` : '';
+      const chapFull = chapLabel && chapterTitle ? `${chapLabel}: ${chapterTitle}` : (chapLabel || chapterTitle);
+      body += para(chapFull, { bold: true, size: 32, spaceBefore: 400, spaceAfter: 60 });
+    }
+    // Beat heading
+    body += para(`Beat ${beat.num}: ${beat.name}`, { bold: true, size: 24, spaceBefore: chapterNum || chapterTitle ? 60 : 320, spaceAfter: 60, color: '475569' });
+    // Hint
+    body += para(beat.hint, { italic: true, size: 20, color: '64748b', spaceAfter: 200 });
+    // Content or placeholder
+    if (content && content.trim()) {
+      content.split('\n').forEach(line => {
+        body += para(line.trim() || ' ', { size: 24, spaceAfter: 120 });
+      });
+    } else {
+      body += para('[Write your ' + beat.name + ' here]', { size: 24, color: 'aaaaaa', spaceAfter: 120 });
+    }
+    if (idx < sections.length - 1) body += pageBreak();
+  });
+
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:wpc="http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+  xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"
+  xmlns:v="urn:schemas-microsoft-com:vml"
+  xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+  xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"
+  xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml"
+  mc:Ignorable="w14 w15">
+  <w:body>
+    ${body}
+    <w:sectPr>
+      <w:pgSz w:w="12240" w:h="15840"/>
+      <w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1800" w:header="720" w:footer="720" w:gutter="0"/>
+    </w:sectPr>
+  </w:body>
+</w:document>`;
+}
+
+function downloadDocx() {
+  if (typeof JSZip === 'undefined') {
+    alert('JSZip library not loaded — please check your internet connection and reload.');
+    return;
+  }
+
+  const titleText = board ? board.name : 'Story Beats';
+
+  // Build beatNum → node map for draft content
+  const beatMap = {};
+  nodes.filter(n => n.node_type === 'beat').forEach(n => {
+    const m = parseMeta(n);
+    if (m.beatNum) beatMap[m.beatNum] = { node: n, meta: m };
+  });
+
+  const sections  = SAVE_THE_CAT_BEATS.map(beat => {
+    // Prefer chapter skeleton draft content over beat view editor content
+    const entry = beatMap[beat.num];
+    const metaDraft = entry?.meta?.draftContent || '';
+    const editor  = document.querySelector(`.doc-editor[data-beat="${beat.num}"]`);
+    const editorContent = editor ? (editor.innerText || editor.textContent || '') : '';
+    const content = metaDraft || editorContent || entry?.meta?.storyNotes || '';
+    const chapterTitle = entry?.meta?.chapterTitle || '';
+    const chapterNum   = entry?.meta?.chapters || '';
+    return { beat, content, chapterTitle, chapterNum };
+  });
+
+  const contentTypesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+</Types>`;
+
+  const relsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+</Relationships>`;
+
+  const wordRelsXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+</Relationships>`;
+
+  const zip = new JSZip();
+  zip.file('[Content_Types].xml', contentTypesXml);
+  zip.file('_rels/.rels', relsXml);
+  zip.file('word/document.xml', buildDocXml(titleText, sections));
+  zip.file('word/_rels/document.xml.rels', wordRelsXml);
+
+  zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' })
+    .then(blob => {
+      const url = URL.createObjectURL(blob);
+      const a   = document.createElement('a');
+      a.href = url;
+      a.download = (board?.name || 'story-beats').replace(/[^a-z0-9 \-_]/gi, '').trim() + '.docx';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 8000);
+    });
 }
 
 // ── HELPERS ───────────────────────────────────────────────────
